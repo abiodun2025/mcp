@@ -54,6 +54,94 @@ def get_desktop_path() -> str:
     """
     return os.path.expanduser("~/Desktop")
 
+@mcp.tool(name="open_gmail")
+def open_gmail() -> str:
+    """
+    Opens Gmail in the default web browser.
+    """
+    try:
+        import webbrowser
+        webbrowser.open("https://mail.google.com")
+        return "Gmail opened successfully in your default browser"
+    except Exception as e:
+        return f"Error opening Gmail: {str(e)}"
+
+@mcp.tool(name="open_gmail_compose")
+def open_gmail_compose() -> str:
+    """
+    Opens Gmail compose window in the default web browser.
+    """
+    try:
+        import webbrowser
+        webbrowser.open("https://mail.google.com/mail/u/0/#compose")
+        return "Gmail compose window opened successfully"
+    except Exception as e:
+        return f"Error opening Gmail compose: {str(e)}"
+
+@mcp.tool(name="sendmail")
+def sendmail(to_email: str, subject: str, body: str, from_email: str = None) -> str:
+    """
+    Send an email using the system's sendmail command.
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        body: Email body content
+        from_email: Sender email address (optional)
+    """
+    try:
+        import subprocess
+        import tempfile
+        
+        # Create email content
+        email_content = f"""From: {from_email or 'noreply@localhost'}
+To: {to_email}
+Subject: {subject}
+
+{body}
+"""
+        
+        # Write email to temporary file
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+            temp_file.write(email_content)
+            temp_file_path = temp_file.name
+        
+        # Send email using sendmail
+        result = subprocess.run(
+            ['sendmail', '-t'],
+            input=email_content,
+            text=True,
+            capture_output=True,
+            timeout=30
+        )
+        
+        # Clean up temp file
+        os.unlink(temp_file_path)
+        
+        if result.returncode == 0:
+            return f"Email sent successfully to {to_email}"
+        else:
+            return f"Failed to send email: {result.stderr.decode()}"
+            
+    except subprocess.TimeoutExpired:
+        return "Email sending timed out"
+    except FileNotFoundError:
+        return "Sendmail command not found. Please install sendmail or configure your system's mail service."
+    except Exception as e:
+        return f"Error sending email: {str(e)}"
+
+@mcp.tool(name="sendmail_simple")
+def sendmail_simple(to_email: str, subject: str, message: str) -> str:
+    """
+    Send a simple email using sendmail.
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        message: Email message
+    """
+    return sendmail(to_email, subject, message)
+
 if __name__ == "__main__":
     try:
         print("Starting MCP server on 127.0.0.1......")
