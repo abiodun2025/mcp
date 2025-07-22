@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}Personalized Email - Email Agent{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-user-edit me-2"></i>Personalized Email
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>Upload Recipients
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- CSV Upload Area -->
+                <div class="file-upload-area mb-4" id="csvUploadArea">
+                    <input type="file" id="csvFile" accept=".csv" style="display: none;">
+                    <div class="file-info">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                        <h5>Upload CSV File</h5>
+                        <p class="text-muted">Drag and drop a CSV file here or click to browse</p>
+                        <p class="small text-muted">CSV must have columns: email, name</p>
+                    </div>
+                </div>
+                
+                <!-- Manual Recipients -->
+                <div class="mb-4">
+                    <h6>
+                        <i class="fas fa-edit me-2"></i>Or Add Recipients Manually
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="email" class="form-control mb-2" id="manualEmail" placeholder="Email address">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control mb-2" id="manualName" placeholder="Name">
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-primary w-100" type="button" onclick="addManualRecipient()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recipients List -->
+                <div class="mb-4">
+                    <h6>
+                        <i class="fas fa-list me-2"></i>Recipients (<span id="recipientCount">0</span>)
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="recipientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recipientsList">
+                                <!-- Recipients will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm" onclick="clearRecipients()">
+                        <i class="fas fa-trash me-1"></i>Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Email Composition -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>Compose Personalized Email
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="personalizedEmailForm">
+                    <div class="mb-3">
+                        <label for="subjectTemplate" class="form-label">
+                            <i class="fas fa-tag me-1"></i>Subject Template
+                        </label>
+                        <input type="text" class="form-control" id="subjectTemplate" name="subjectTemplate" 
+                               placeholder="Hello {name}, here's your update" required>
+                        <div class="form-text">Use {name} to include the recipient's name</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="messageTemplate" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Message Template
+                        </label>
+                        <textarea class="form-control" id="messageTemplate" name="messageTemplate" rows="8" required></textarea>
+                        <div class="form-text">Use {name} to include the recipient's name</div>
+                    </div>
+                    
+                    <!-- Template Preview -->
+                    <div class="mb-3">
+                        <h6>
+                            <i class="fas fa-eye me-2"></i>Preview (using first recipient)
+                        </h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div id="previewSubject" class="mb-2">
+                                    <strong>Subject:</strong> <span class="text-muted">Enter subject template to see preview</span>
+                                </div>
+                                <div id="previewMessage">
+                                    <strong>Message:</strong> <span class="text-muted">Enter message template to see preview</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="clearForm()">
+                            <i class="fas fa-eraser me-1"></i>Clear
+                        </button>
+                        <button type="submit" class="btn btn-info" id="sendPersonalizedButton">
+                            <i class="fas fa-paper-plane me-1"></i>Send Personalized Emails
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Email Templates -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>Quick Templates
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadTemplate('welcome')">
+                        <i class="fas fa-hand-wave me-1"></i>Welcome
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="loadTemplate('newsletter')">
+                        <i class="fas fa-newspaper me-1"></i>Newsletter
+                    </button>
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="loadTemplate('invitation')">
+                        <i class="fas fa-calendar-plus me-1"></i>Invitation
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="loadTemplate('reminder')">
+                        <i class="fas fa-bell me-1"></i>Reminder
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sample CSV -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-csv me-2"></i>Sample CSV Format
+                </h5>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-2 rounded"><code>email,name
+john@example.com,John Doe
+jane@example.com,Jane Smith
+bob@example.com,Bob Johnson</code></pre>
+                <button class="btn btn-outline-primary btn-sm mt-2" onclick="downloadSampleCSV()">
+                    <i class="fas fa-download me-1"></i>Download Sample
+                </button>
+            </div>
+        </div>
+        
+        <!-- Status -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="personalizedEmailStatus">
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-clock me-1"></i>Ready to send
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-paper-plane me-2"></i>Sending Personalized Emails
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress mb-3">
+                    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p id="progressText">Preparing to send personalized emails...</p>
+                <div id="progressDetails" class="small text-muted">
+                    <!-- Progress details will be shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let recipients = [];
+
+const templates = {
+    welcome: {
+        subject: "Welcome {name}!",
+        message: "Dear {name},\n\nWelcome to our platform! We're excited to have you on board.\n\nBest regards,\nThe Team"
+    },
+    newsletter: {
+        subject: "Monthly Newsletter for {name}",
+        message: "Hi {name},\n\nHere's your monthly newsletter with the latest updates.\n\nBest regards,\nNewsletter Team"
+    },
+    invitation: {
+        subject: "Special Invitation for {name}",
+        message: "Dear {name},\n\nYou're invited to our special event!\n\nWe hope to see you there.\n\nBest regards,\nEvent Team"
+    },
+    reminder: {
+        subject: "Reminder for {name}",
+        message: "Hi {name},\n\nThis is a friendly reminder about your upcoming appointment.\n\nBest regards,\nReminder System"
+    }
+};
+
+// File upload handling
+document.getElementById('csvFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        uploadCSV(file);
+    }
+});
+
+function uploadCSV(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    EmailAgent.showLoading(document.getElementById('csvFile'), 'Uploading...');
+    
+    fetch('/api/upload-csv', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        EmailAgent.hideLoading(document.getElementById('csvFile'));
+        
+        if (data.success) {
+            recipients = data.recipients;
+            updateRecipientsTable();
+            updatePreview();
+            EmailAgent.showNotification(data.message, 'success');
+        } else {
+            EmailAgent.showNotification(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        EmailAgent.hideLoading(document.getElementById('csvFile'));
+        EmailAgent.showNotification('Upload failed: ' + error.message, 'error');
+    });
+}
+
+function addManualRecipient() {
+    const email = document.getElementById('manualEmail').value.trim();
+    const name = document.getElementById('manualName').value.trim();
+    
+    if (!email) {
+        EmailAgent.showNotification('Please enter an email address', 'error');
+        return;
+    }
+    
+    if (!name) {
+        EmailAgent.showNotification('Please enter a name', 'error');
+        return;
+    }
+    
+    if (!EmailAgent.validateEmail(email)) {
+        EmailAgent.showNotification('Please enter a valid email address', 'error');
+        return;
+    }
+    
+    // Check if email already exists
+    if (recipients.some(r => r.email === email)) {
+        EmailAgent.showNotification('Email already in list', 'warning');
+        return;
+    }
+    
+    recipients.push({ email: email, name: name });
+    updateRecipientsTable();
+    updatePreview();
+    document.getElementById('manualEmail').value = '';
+    document.getElementById('manualName').value = '';
+    EmailAgent.showNotification('Recipient added', 'success');
+}
+
+function removeRecipient(index) {
+    recipients.splice(index, 1);
+    updateRecipientsTable();
+    updatePreview();
+    EmailAgent.showNotification('Recipient removed', 'info');
+}
+
+function clearRecipients() {
+    recipients = [];
+    updateRecipientsTable();
+    updatePreview();
+    EmailAgent.showNotification('All recipients cleared', 'info');
+}
+
+function updateRecipientsTable() {
+    const tbody = document.getElementById('recipientsList');
+    const count = document.getElementById('recipientCount');
+    
+    tbody.innerHTML = '';
+    count.textContent = recipients.length;
+    
+    recipients.forEach((recipient, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${recipient.email}</td>
+            <td>${recipient.name}</td>
+            <td>
+                <button class="btn btn-outline-danger btn-sm" onclick="removeRecipient(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function loadTemplate(templateName) {
+    const template = templates[templateName];
+    if (template) {
+        document.getElementById('subjectTemplate').value = template.subject;
+        document.getElementById('messageTemplate').value = template.message;
+        updatePreview();
+    }
+}
+
+function updatePreview() {
+    const subjectTemplate = document.getElementById('subjectTemplate').value;
+    const messageTemplate = document.getElementById('messageTemplate').value;
+    
+    if (recipients.length > 0 && subjectTemplate && messageTemplate) {
+        const firstRecipient = recipients[0];
+        const previewSubject = subjectTemplate.replace(/{name}/g, firstRecipient.name);
+        const previewMessage = messageTemplate.replace(/{name}/g, firstRecipient.name);
+        
+        document.getElementById('previewSubject').innerHTML = `<strong>Subject:</strong> ${previewSubject}`;
+        document.getElementById('previewMessage').innerHTML = `<strong>Message:</strong> ${previewMessage.replace(/\n/g, '<br>')}`;
+    } else {
+        document.getElementById('previewSubject').innerHTML = '<strong>Subject:</strong> <span class="text-muted">Enter subject template to see preview</span>';
+        document.getElementById('previewMessage').innerHTML = '<strong>Message:</strong> <span class="text-muted">Enter message template to see preview</span>';
+    }
+}
+
+function clearForm() {
+    document.getElementById('personalizedEmailForm').reset();
+    updatePreview();
+    updatePersonalizedEmailStatus('Ready to send', 'text-muted');
+}
+
+function updatePersonalizedEmailStatus(message, className) {
+    const statusDiv = document.getElementById('personalizedEmailStatus');
+    statusDiv.innerHTML = `<p class="${className} mb-0"><i class="fas fa-info-circle me-1"></i>${message}</p>`;
+}
+
+function downloadSampleCSV() {
+    const sampleData = [
+        { email: 'john@example.com', name: 'John Doe' },
+        { email: 'jane@example.com', name: 'Jane Smith' },
+        { email: 'bob@example.com', name: 'Bob Johnson' }
+    ];
+    
+    const csvContent = EmailAgent.generateCSV(sampleData, ['email', 'name']);
+    EmailAgent.downloadFile(csvContent, 'sample_recipients.csv');
+}
+
+// Add event listeners for preview updates
+document.getElementById('subjectTemplate').addEventListener('input', updatePreview);
+document.getElementById('messageTemplate').addEventListener('input', updatePreview);
+
+// Form submission
+document.getElementById('personalizedEmailForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (recipients.length === 0) {
+        EmailAgent.showNotification('Please add at least one recipient', 'error');
+        return;
+    }
+    
+    const subjectTemplate = document.getElementById('subjectTemplate').value.trim();
+    const messageTemplate = document.getElementById('messageTemplate').value.trim();
+    
+    if (!subjectTemplate || !messageTemplate) {
+        EmailAgent.showNotification('Please fill in subject and message templates', 'error');
+        return;
+    }
+    
+    // Show progress modal
+    const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+    progressModal.show();
+    
+    // Disable send button
+    const sendButton = document.getElementById('sendPersonalizedButton');
+    EmailAgent.showLoading(sendButton, 'Sending...');
+    
+    // Send personalized emails
+    fetch('/api/send-personalized', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            recipients: recipients,
+            subject_template: subjectTemplate,
+            message_template: messageTemplate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        progressModal.hide();
+        EmailAgent.hideLoading(sendButton);
+        
+        if (data.success) {
+            updatePersonalizedEmailStatus(data.message, 'text-success');
+            EmailAgent.showNotification(data.message, 'success');
+        } else {
+            updatePersonalizedEmailStatus(`Error: ${data.error}`, 'text-danger');
+            EmailAgent.showNotification(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        progressModal.hide();
+        EmailAgent.hideLoading(sendButton);
+        updatePersonalizedEmailStatus(`Error: ${error.message}`, 'text-danger');
+        EmailAgent.showNotification('Failed to send emails: ' + error.message, 'error');
+    });
+});
+</script>
+{% endblock %} 

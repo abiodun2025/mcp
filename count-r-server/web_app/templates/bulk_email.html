@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Email - Email Agent{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-users me-2"></i>Bulk Email
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>Upload Recipients
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- CSV Upload Area -->
+                <div class="file-upload-area mb-4" id="csvUploadArea">
+                    <input type="file" id="csvFile" accept=".csv" style="display: none;">
+                    <div class="file-info">
+                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                        <h5>Upload CSV File</h5>
+                        <p class="text-muted">Drag and drop a CSV file here or click to browse</p>
+                        <p class="small text-muted">CSV should have columns: email, name (optional)</p>
+                    </div>
+                </div>
+                
+                <!-- Manual Recipients -->
+                <div class="mb-4">
+                    <h6>
+                        <i class="fas fa-edit me-2"></i>Or Add Recipients Manually
+                    </h6>
+                    <div class="input-group mb-2">
+                        <input type="email" class="form-control" id="manualEmail" placeholder="Enter email address">
+                        <button class="btn btn-outline-primary" type="button" onclick="addManualRecipient()">
+                            <i class="fas fa-plus me-1"></i>Add
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Recipients List -->
+                <div class="mb-4">
+                    <h6>
+                        <i class="fas fa-list me-2"></i>Recipients (<span id="recipientCount">0</span>)
+                    </h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="recipientsTable">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Name</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recipientsList">
+                                <!-- Recipients will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm" onclick="clearRecipients()">
+                        <i class="fas fa-trash me-1"></i>Clear All
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Email Composition -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>Compose Email
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="bulkEmailForm">
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">
+                            <i class="fas fa-tag me-1"></i>Subject
+                        </label>
+                        <input type="text" class="form-control" id="subject" name="subject" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="message" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Message
+                        </label>
+                        <textarea class="form-control" id="message" name="message" rows="8" required></textarea>
+                        <div class="form-text">Use {name} to personalize the message</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="clearForm()">
+                            <i class="fas fa-eraser me-1"></i>Clear
+                        </button>
+                        <button type="submit" class="btn btn-success" id="sendBulkButton">
+                            <i class="fas fa-paper-plane me-1"></i>Send Bulk Email
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Sample CSV -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-csv me-2"></i>Sample CSV Format
+                </h5>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-2 rounded"><code>email,name
+john@example.com,John Doe
+jane@example.com,Jane Smith
+bob@example.com,Bob Johnson</code></pre>
+                <button class="btn btn-outline-primary btn-sm mt-2" onclick="downloadSampleCSV()">
+                    <i class="fas fa-download me-1"></i>Download Sample
+                </button>
+            </div>
+        </div>
+        
+        <!-- Status -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="bulkEmailStatus">
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-clock me-1"></i>Ready to send
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Modal -->
+<div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-paper-plane me-2"></i>Sending Bulk Emails
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress mb-3">
+                    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p id="progressText">Preparing to send emails...</p>
+                <div id="progressDetails" class="small text-muted">
+                    <!-- Progress details will be shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let recipients = [];
+
+// File upload handling
+document.getElementById('csvFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        uploadCSV(file);
+    }
+});
+
+function uploadCSV(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    EmailAgent.showLoading(document.getElementById('csvFile'), 'Uploading...');
+    
+    fetch('/api/upload-csv', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        EmailAgent.hideLoading(document.getElementById('csvFile'));
+        
+        if (data.success) {
+            recipients = data.recipients;
+            updateRecipientsTable();
+            EmailAgent.showNotification(data.message, 'success');
+        } else {
+            EmailAgent.showNotification(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        EmailAgent.hideLoading(document.getElementById('csvFile'));
+        EmailAgent.showNotification('Upload failed: ' + error.message, 'error');
+    });
+}
+
+function addManualRecipient() {
+    const email = document.getElementById('manualEmail').value.trim();
+    if (!email) {
+        EmailAgent.showNotification('Please enter an email address', 'error');
+        return;
+    }
+    
+    if (!EmailAgent.validateEmail(email)) {
+        EmailAgent.showNotification('Please enter a valid email address', 'error');
+        return;
+    }
+    
+    // Check if email already exists
+    if (recipients.some(r => r.email === email)) {
+        EmailAgent.showNotification('Email already in list', 'warning');
+        return;
+    }
+    
+    recipients.push({ email: email, name: '' });
+    updateRecipientsTable();
+    document.getElementById('manualEmail').value = '';
+    EmailAgent.showNotification('Recipient added', 'success');
+}
+
+function removeRecipient(index) {
+    recipients.splice(index, 1);
+    updateRecipientsTable();
+    EmailAgent.showNotification('Recipient removed', 'info');
+}
+
+function clearRecipients() {
+    recipients = [];
+    updateRecipientsTable();
+    EmailAgent.showNotification('All recipients cleared', 'info');
+}
+
+function updateRecipientsTable() {
+    const tbody = document.getElementById('recipientsList');
+    const count = document.getElementById('recipientCount');
+    
+    tbody.innerHTML = '';
+    count.textContent = recipients.length;
+    
+    recipients.forEach((recipient, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${recipient.email}</td>
+            <td>${recipient.name || '-'}</td>
+            <td>
+                <button class="btn btn-outline-danger btn-sm" onclick="removeRecipient(${index})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function clearForm() {
+    document.getElementById('bulkEmailForm').reset();
+    updateBulkEmailStatus('Ready to send', 'text-muted');
+}
+
+function updateBulkEmailStatus(message, className) {
+    const statusDiv = document.getElementById('bulkEmailStatus');
+    statusDiv.innerHTML = `<p class="${className} mb-0"><i class="fas fa-info-circle me-1"></i>${message}</p>`;
+}
+
+function downloadSampleCSV() {
+    const sampleData = [
+        { email: 'john@example.com', name: 'John Doe' },
+        { email: 'jane@example.com', name: 'Jane Smith' },
+        { email: 'bob@example.com', name: 'Bob Johnson' }
+    ];
+    
+    const csvContent = EmailAgent.generateCSV(sampleData, ['email', 'name']);
+    EmailAgent.downloadFile(csvContent, 'sample_recipients.csv');
+}
+
+// Form submission
+document.getElementById('bulkEmailForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (recipients.length === 0) {
+        EmailAgent.showNotification('Please add at least one recipient', 'error');
+        return;
+    }
+    
+    const subject = document.getElementById('subject').value.trim();
+    const message = document.getElementById('message').value.trim();
+    
+    if (!subject || !message) {
+        EmailAgent.showNotification('Please fill in subject and message', 'error');
+        return;
+    }
+    
+    // Show progress modal
+    const progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
+    progressModal.show();
+    
+    // Disable send button
+    const sendButton = document.getElementById('sendBulkButton');
+    EmailAgent.showLoading(sendButton, 'Sending...');
+    
+    // Send bulk email
+    fetch('/api/send-bulk', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            recipients: recipients.map(r => r.email),
+            subject: subject,
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        progressModal.hide();
+        EmailAgent.hideLoading(sendButton);
+        
+        if (data.success) {
+            updateBulkEmailStatus(data.message, 'text-success');
+            EmailAgent.showNotification(data.message, 'success');
+        } else {
+            updateBulkEmailStatus(`Error: ${data.error}`, 'text-danger');
+            EmailAgent.showNotification(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        progressModal.hide();
+        EmailAgent.hideLoading(sendButton);
+        updateBulkEmailStatus(`Error: ${error.message}`, 'text-danger');
+        EmailAgent.showNotification('Failed to send emails: ' + error.message, 'error');
+    });
+});
+</script>
+{% endblock %} 

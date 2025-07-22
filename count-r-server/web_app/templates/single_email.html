@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Single Email - Email Agent{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-envelope me-2"></i>Send Single Email
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-edit me-2"></i>Compose Email
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="singleEmailForm">
+                    <div class="mb-3">
+                        <label for="toEmail" class="form-label">
+                            <i class="fas fa-user me-1"></i>To Email
+                        </label>
+                        <input type="email" class="form-control" id="toEmail" name="toEmail" required>
+                        <div class="form-text">Enter the recipient's email address</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">
+                            <i class="fas fa-tag me-1"></i>Subject
+                        </label>
+                        <input type="text" class="form-control" id="subject" name="subject" required>
+                        <div class="form-text">Enter the email subject line</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="message" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Message
+                        </label>
+                        <textarea class="form-control" id="message" name="message" rows="10" required></textarea>
+                        <div class="form-text">Enter your email message</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-secondary me-md-2" onclick="clearForm()">
+                            <i class="fas fa-eraser me-1"></i>Clear
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="sendButton">
+                            <i class="fas fa-paper-plane me-1"></i>Send Email
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Email Templates -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>Quick Templates
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="loadTemplate('greeting')">
+                        <i class="fas fa-hand-wave me-1"></i>Greeting
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="loadTemplate('meeting')">
+                        <i class="fas fa-calendar me-1"></i>Meeting Request
+                    </button>
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="loadTemplate('followup')">
+                        <i class="fas fa-phone me-1"></i>Follow-up
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="loadTemplate('thankyou')">
+                        <i class="fas fa-heart me-1"></i>Thank You
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Status -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="emailStatus">
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-clock me-1"></i>Ready to send
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Sending...</span>
+                </div>
+                <p class="mb-0">Sending email...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const templates = {
+    greeting: {
+        subject: "Hello from Email Agent",
+        message: "Hi there!\n\nI hope this email finds you well.\n\nBest regards,\nYour Email Agent"
+    },
+    meeting: {
+        subject: "Meeting Request",
+        message: "Hi,\n\nI would like to schedule a meeting with you.\n\nPlease let me know your availability.\n\nBest regards,\nYour Email Agent"
+    },
+    followup: {
+        subject: "Follow-up",
+        message: "Hi,\n\nI'm following up on our previous conversation.\n\nPlease let me know if you have any updates.\n\nBest regards,\nYour Email Agent"
+    },
+    thankyou: {
+        subject: "Thank You",
+        message: "Hi,\n\nThank you for your time and consideration.\n\nI really appreciate it.\n\nBest regards,\nYour Email Agent"
+    }
+};
+
+function loadTemplate(templateName) {
+    const template = templates[templateName];
+    if (template) {
+        document.getElementById('subject').value = template.subject;
+        document.getElementById('message').value = template.message;
+    }
+}
+
+function clearForm() {
+    document.getElementById('singleEmailForm').reset();
+    updateStatus('Ready to send', 'text-muted');
+}
+
+function updateStatus(message, className) {
+    const statusDiv = document.getElementById('emailStatus');
+    statusDiv.innerHTML = `<p class="${className} mb-0"><i class="fas fa-info-circle me-1"></i>${message}</p>`;
+}
+
+document.getElementById('singleEmailForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const toEmail = document.getElementById('toEmail').value;
+    const subject = document.getElementById('subject').value;
+    const message = document.getElementById('message').value;
+    
+    if (!toEmail || !subject || !message) {
+        updateStatus('Please fill in all fields', 'text-danger');
+        return;
+    }
+    
+    // Show loading modal
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    loadingModal.show();
+    
+    // Disable send button
+    const sendButton = document.getElementById('sendButton');
+    sendButton.disabled = true;
+    sendButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+    
+    // Send email
+    fetch('/api/send-single', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            to_email: toEmail,
+            subject: subject,
+            message: message
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        loadingModal.hide();
+        
+        if (data.success) {
+            updateStatus('Email sent successfully!', 'text-success');
+            document.getElementById('singleEmailForm').reset();
+        } else {
+            updateStatus(`Error: ${data.error}`, 'text-danger');
+        }
+    })
+    .catch(error => {
+        loadingModal.hide();
+        updateStatus(`Error: ${error.message}`, 'text-danger');
+    })
+    .finally(() => {
+        // Re-enable send button
+        sendButton.disabled = false;
+        sendButton.innerHTML = '<i class="fas fa-paper-plane me-1"></i>Send Email';
+    });
+});
+</script>
+{% endblock %} 

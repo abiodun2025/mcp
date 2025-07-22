@@ -1,0 +1,38 @@
+{
+    "mcpServers": {
+        "count-r": {
+            "command": "env",
+            "args": [
+                 "PYTHONPATH=..",
+                 "python3",
+                 "/Users/ola/Desktop/working-mcp-server/count-r-server/server.py"
+                   ],
+            "host": "127.7.0.0.1",
+            "port": 5000,
+            "timeout": 30
+        },
+        "list-desktop": {
+            "command": "env",
+            "args": [
+                "PYTHONPATH=..",
+                "python3",
+                "/Users/ola/Desktop/working-mcp-server/count-r-server/server.py"
+            ],
+            "host": "127.7.0.0.1",
+            "port": 5001,
+            "timeout": 30
+        },
+        "get-desktop-path": {
+            "command": "env",
+            "args": [
+                "PYTHONPATH=..",
+                "python3",
+                "/Users/ola/Desktop/working-mcp-server/count-r-server/server.py"
+            ],
+            "host": "127.7.0.0.1",
+            "port": 5002,
+            "timeout": 30
+        }
+    }
+    
+}

@@ -1,0 +1,2278 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Email Agent{% endblock %}
+
+{% block content %}
+<script>
+window.githubUsername = "{{ github_config.username if github_config and github_config.username else '' }}";
+console.log('GitHub Username loaded:', window.githubUsername);
+</script>
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Email Tools Cards -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">
+            <i class="fas fa-envelope me-2"></i>Email Tools
+        </h4>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <i class="fas fa-envelope fa-2x text-primary mb-2"></i>
+                <h5 class="card-title">Single Email</h5>
+                <p class="card-text">Send individual emails</p>
+                <a href="{{ url_for('single_email') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Send Email
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-2x text-success mb-2"></i>
+                <h5 class="card-title">Bulk Email</h5>
+                <p class="card-text">Send to multiple recipients</p>
+                <a href="{{ url_for('bulk_email') }}" class="btn btn-success">
+                    <i class="fas fa-upload me-1"></i>Bulk Send
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <i class="fas fa-user-edit fa-2x text-info mb-2"></i>
+                <h5 class="card-title">Personalized</h5>
+                <p class="card-text">Send personalized emails</p>
+                <a href="{{ url_for('personalized_email') }}" class="btn btn-info">
+                    <i class="fas fa-magic me-1"></i>Personalize
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <i class="fas fa-cog fa-2x text-warning mb-2"></i>
+                <h5 class="card-title">Configuration</h5>
+                <p class="card-text">Manage Gmail settings</p>
+                <a href="{{ url_for('config_page') }}" class="btn btn-warning">
+                    <i class="fas fa-wrench me-1"></i>Configure
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GitHub Tools Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4><i class="fab fa-github me-2"></i>GitHub Tools</h4>
+    </div>
+</div>
+<div class="row mb-4">
+    <div class="col-md-2 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-sign-in-alt fa-2x text-primary mb-2"></i>
+                <h6 class="card-title">GitHub Login</h6>
+                <button class="btn btn-primary btn-sm" onclick="showGitHubLogin()">
+                    <i class="fas fa-key me-1"></i>Login
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-plus-circle fa-2x text-success mb-2"></i>
+                <h6 class="card-title">Create PR</h6>
+                <button class="btn btn-success btn-sm" onclick="showCreatePR()">
+                    <i class="fas fa-code-branch me-1"></i>Create
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-rocket fa-2x text-warning mb-2"></i>
+                <h6 class="card-title">Quick Create PR</h6>
+                <button class="btn btn-warning btn-sm" onclick="showQuickCreatePR()">
+                    <i class="fas fa-bolt me-1"></i>Quick PR
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-search fa-2x text-info mb-2"></i>
+                <h6 class="card-title">Code Review</h6>
+                <button class="btn btn-info btn-sm" onclick="showCodeReview()">
+                    <i class="fas fa-eye me-1"></i>Review
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-list fa-2x text-secondary mb-2"></i>
+                <h6 class="card-title">List PRs</h6>
+                <button class="btn btn-secondary btn-sm" onclick="showListPRs()">
+                    <i class="fas fa-th-list me-1"></i>List
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 mb-3">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-folder fa-2x text-dark mb-2"></i>
+                <h6 class="card-title">My Repositories</h6>
+                <button class="btn btn-dark btn-sm" onclick="showMyRepositories()">
+                    <i class="fas fa-database me-1"></i>Repos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Cards -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <!-- Gmail Status -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Gmail SMTP Status
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if config %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong> {{ config.email }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Configured
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-outline-primary" onclick="testConnection()">
+                                <i class="fas fa-plug me-1"></i>Test Connection
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Gmail SMTP is not configured. 
+                        <a href="{{ url_for('config_page') }}" class="alert-link">Configure now</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <!-- GitHub Status -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fab fa-github me-2"></i>GitHub Status
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if github_config %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong> {{ github_config.username }}</p>
+                            <p><strong>Status:</strong> 
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check me-1"></i>Authenticated
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-outline-dark" onclick="testGitHubConnection()">
+                                <i class="fas fa-plug me-1"></i>Test Connection
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        GitHub is not configured. 
+                        <button class="btn btn-sm btn-dark" onclick="showGitHubLogin()">Login now</button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GitHub Login Modal -->
+<div class="modal fade" id="githubLoginModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fab fa-github me-2"></i>GitHub Login
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Authentication Method</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="authMethod" id="tokenAuth" value="token" checked>
+                        <label class="form-check-label" for="tokenAuth">
+                            Personal Access Token (Recommended)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="authMethod" id="passwordAuth" value="password">
+                        <label class="form-check-label" for="passwordAuth">
+                            Username & Password
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="githubUsername" class="form-label">GitHub Username</label>
+                    <input type="text" class="form-control" id="githubUsername" required>
+                </div>
+                
+                <div class="mb-3" id="tokenField">
+                    <label for="githubToken" class="form-label">Personal Access Token</label>
+                    <input type="password" class="form-control" id="githubToken" placeholder="ghp_...">
+                    <div class="form-text">
+                        <a href="https://github.com/settings/tokens" target="_blank">Create a token here</a>
+                    </div>
+                </div>
+                
+                <div class="mb-3" id="passwordField" style="display: none;">
+                    <label for="githubPassword" class="form-label">GitHub Password</label>
+                    <input type="password" class="form-control" id="githubPassword">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-dark" onclick="loginGitHub()">
+                    <i class="fab fa-github me-1"></i>Login
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create PR Modal -->
+<div class="modal fade" id="createPRModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-code-branch me-2"></i>Create Pull Request
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="prOwner" class="form-label">Repository Owner</label>
+                            <input type="text" class="form-control" id="prOwner" placeholder="username">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="prRepo" class="form-label">Repository Name</label>
+                            <input type="text" class="form-control" id="prRepo" placeholder="repo-name">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="prHead" class="form-label">Head Branch</label>
+                            <input type="text" class="form-control" id="prHead" placeholder="feature-branch">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="prBase" class="form-label">Base Branch</label>
+                            <input type="text" class="form-control" id="prBase" placeholder="main" value="main">
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="prTitle" class="form-label">PR Title</label>
+                    <input type="text" class="form-control" id="prTitle" placeholder="Add new feature">
+                </div>
+                <div class="mb-3">
+                    <label for="prBody" class="form-label">PR Description</label>
+                    <textarea class="form-control" id="prBody" rows="5" placeholder="Describe your changes..."></textarea>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" onclick="loadBranches()">
+                        <i class="fas fa-code-branch me-1"></i>Load Branches
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="generatePRTemplate()">
+                        <i class="fas fa-magic me-1"></i>Generate Template
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createPullRequest()">
+                    <i class="fas fa-plus me-1"></i>Create PR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Create PR Modal -->
+<div class="modal fade" id="quickCreatePRModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-rocket me-2"></i>Quick Create Pull Request
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Instructions -->
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Quick Start:</strong> Select your repository, choose branches, and let us generate a professional PR template for you!
+                </div>
+                
+                <!-- Repository Selection -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-folder me-2"></i>Repository</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="quickPrOwner" class="form-label">Owner</label>
+                                <input type="text" class="form-control" id="quickPrOwner" placeholder="username" value="{{ github_config.username if github_config else '' }}">
+                                <small class="form-text text-muted">Your GitHub username or organization name</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="quickPrRepo" class="form-label">Repository</label>
+                                <select class="form-control" id="quickPrRepo" onchange="onRepositoryChange()">
+                                    <option value="">Select repository...</option>
+                                </select>
+                                <small class="form-text text-muted">Choose from your repositories</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Branch Selection -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-code-branch me-2"></i>Branches</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="quickPrHead" class="form-label">Head Branch (your changes)</label>
+                                <select class="form-control" id="quickPrHead">
+                                    <option value="">Select head branch...</option>
+                                </select>
+                                <small class="form-text text-muted">The branch containing your changes</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="quickPrBase" class="form-label">Base Branch (target)</label>
+                                <select class="form-control" id="quickPrBase">
+                                    <option value="main">main</option>
+                                    <option value="master">master</option>
+                                    <option value="develop">develop</option>
+                                </select>
+                                <small class="form-text text-muted">The branch you want to merge into</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PR Details -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-edit me-2"></i>Pull Request Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="quickPrTitle" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="quickPrTitle" placeholder="Add new feature" onchange="updateQuickTemplate()">
+                                <small class="form-text text-muted">A clear, descriptive title for your PR</small>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="quickPrType" class="form-label">Type</label>
+                                <select class="form-control" id="quickPrType" onchange="updateQuickTemplate()">
+                                    <option value="feature">🚀 Feature</option>
+                                    <option value="bugfix">🐛 Bug Fix</option>
+                                    <option value="hotfix">🔥 Hotfix</option>
+                                    <option value="refactor">🔧 Refactor</option>
+                                    <option value="docs">📚 Documentation</option>
+                                </select>
+                                <small class="form-text text-muted">Type of change</small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickPrDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="quickPrDescription" rows="3" placeholder="Brief description of your changes..." onchange="updateQuickTemplate()"></textarea>
+                            <small class="form-text text-muted">A brief description of what this PR does</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickPrTemplate" class="form-label">Generated Template</label>
+                            <textarea class="form-control" id="quickPrTemplate" rows="8" readonly></textarea>
+                            <small class="form-text text-muted">Professional PR template generated automatically</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="quickCreatePullRequest()">
+                    <i class="fas fa-rocket me-1"></i>Quick Create PR
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- List PRs Modal -->
+<div class="modal fade" id="listPRsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-list me-2"></i>List Pull Requests
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="listOwner" class="form-label">Repository Owner</label>
+                            <input type="text" class="form-control" id="listOwner" placeholder="username">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="listRepo" class="form-label">Repository Name</label>
+                            <input type="text" class="form-control" id="listRepo" placeholder="repo-name">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="listState" class="form-label">State</label>
+                    <select class="form-control" id="listState">
+                        <option value="open">Open</option>
+                        <option value="closed">Closed</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                
+                <button type="button" class="btn btn-info" onclick="listPullRequests()">
+                    <i class="fas fa-search me-1"></i>List PRs
+                </button>
+                
+                <div id="prListResults" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Code Review Modal -->
+<div class="modal fade" id="codeReviewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-search me-2"></i>Advanced Code Review
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Auto-Population Section -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-magic me-2"></i>Auto-Populate PR Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Quick Select</label>
+                                    <div class="d-grid gap-2">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="showRepoPRSelector()">
+                                            <i class="fas fa-list me-1"></i>Select from Repository
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info btn-sm" onclick="showSearchPR()">
+                                            <i class="fas fa-search me-1"></i>Search PRs
+                                        </button>
+                                        <button type="button" class="btn btn-outline-success btn-sm" onclick="showMyPRs()">
+                                            <i class="fas fa-user me-1"></i>My PRs
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label">Recent Repositories</label>
+                                    <select class="form-control" id="recentReposSelect" onchange="loadRepoPRs()">
+                                        <option value="">Select a repository...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PR Information Section -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="reviewOwner" class="form-label">Repository Owner</label>
+                            <input type="text" class="form-control" id="reviewOwner" placeholder="username">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="reviewRepo" class="form-label">Repository Name</label>
+                            <input type="text" class="form-control" id="reviewRepo" placeholder="repo-name">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="reviewNumber" class="form-label">PR Number</label>
+                            <input type="number" class="form-control" id="reviewNumber" placeholder="123">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary" onclick="loadPRDetails()">
+                                <i class="fas fa-info-circle me-1"></i>Load PR Details
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="loadPRReviews()">
+                                <i class="fas fa-comments me-1"></i>Load Reviews
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" onclick="loadPRFiles()">
+                                <i class="fas fa-file-code me-1"></i>Load Files
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- PR Details Display -->
+                <div id="prDetailsSection" class="mb-3" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Pull Request Details</h6>
+                        </div>
+                        <div class="card-body" id="prDetailsContent">
+                            <!-- PR details will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reviews Display -->
+                <div id="prReviewsSection" class="mb-3" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-comments me-2"></i>Existing Reviews</h6>
+                        </div>
+                        <div class="card-body" id="prReviewsContent">
+                            <!-- Reviews will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Files Display -->
+                <div id="prFilesSection" class="mb-3" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-file-code me-2"></i>Changed Files</h6>
+                        </div>
+                        <div class="card-body" id="prFilesContent">
+                            <!-- Files will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Review Submission Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-edit me-2"></i>Submit Review</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="reviewEvent" class="form-label">Review Action</label>
+                                    <select class="form-control" id="reviewEvent">
+                                        <option value="COMMENT">Comment</option>
+                                        <option value="APPROVE">Approve</option>
+                                        <option value="REQUEST_CHANGES">Request Changes</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Quick Actions</label>
+                                    <div class="d-grid gap-1">
+                                        <button type="button" class="btn btn-outline-success btn-sm" onclick="setReviewTemplate('approve')">
+                                            <i class="fas fa-thumbs-up me-1"></i>Approve Template
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning btn-sm" onclick="setReviewTemplate('changes')">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Request Changes Template
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="reviewBody" class="form-label">Review Comment</label>
+                            <textarea class="form-control" id="reviewBody" rows="6" placeholder="Write your detailed review..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitCodeReview()">
+                    <i class="fas fa-paper-plane me-1"></i>Submit Review
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Repositories Modal -->
+<div class="modal fade" id="myReposModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-folder me-2"></i>My GitHub Repositories
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <button type="button" class="btn btn-warning" onclick="loadMyRepositories()">
+                        <i class="fas fa-sync me-1"></i>Load My Repositories
+                    </button>
+                </div>
+                
+                <div id="reposResults" class="mt-3">
+                    <p class="text-muted text-center">Click "Load My Repositories" to see your repositories</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MCP Tools Section -->
+<div class="row mb-4" id="mcp-tools">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-tools me-2"></i>MCP Tools
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Count R Tool -->
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-secondary h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-calculator fa-2x text-secondary mb-2"></i>
+                                <h6 class="card-title">Count R's</h6>
+                                <p class="card-text small">Count 'r' letters in a word</p>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control form-control-sm" id="countRInput" placeholder="Enter word">
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="countR()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                                <div id="countRResult" class="small text-muted"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Desktop Tools -->
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-info h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-desktop fa-2x text-info mb-2"></i>
+                                <h6 class="card-title">Desktop Tools</h6>
+                                <p class="card-text small">Manage desktop files</p>
+                                <div class="d-grid gap-1">
+                                    <button class="btn btn-outline-info btn-sm" onclick="getDesktopPath()">
+                                        <i class="fas fa-folder me-1"></i>Get Path
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm" onclick="listDesktopContents()">
+                                        <i class="fas fa-list me-1"></i>List Files
+                                    </button>
+                                </div>
+                                <div id="desktopResult" class="small text-muted mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Gmail Tools -->
+                    <div class="col-md-4 mb-3">
+                        <div class="card border-success h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-envelope-open fa-2x text-success mb-2"></i>
+                                <h6 class="card-title">Gmail Tools</h6>
+                                <p class="card-text small">Quick Gmail actions</p>
+                                <div class="d-grid gap-1">
+                                    <button class="btn btn-outline-success btn-sm" onclick="openGmail()">
+                                        <i class="fas fa-external-link-alt me-1"></i>Open Gmail
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm" onclick="openGmailCompose()">
+                                        <i class="fas fa-edit me-1"></i>Compose
+                                    </button>
+                                </div>
+                                <div id="gmailResult" class="small text-muted mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MCP Sendmail Tools -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card border-warning">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-paper-plane me-2"></i>MCP Sendmail Tools
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Simple Sendmail</h6>
+                                        <div class="mb-2">
+                                            <input type="email" class="form-control form-control-sm mb-1" id="simpleToEmail" placeholder="To Email">
+                                            <input type="text" class="form-control form-control-sm mb-1" id="simpleSubject" placeholder="Subject">
+                                            <textarea class="form-control form-control-sm mb-2" id="simpleMessage" rows="2" placeholder="Message"></textarea>
+                                            <button class="btn btn-warning btn-sm" onclick="sendmailSimple()">
+                                                <i class="fas fa-paper-plane me-1"></i>Send Simple
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Advanced Sendmail</h6>
+                                        <div class="mb-2">
+                                            <input type="email" class="form-control form-control-sm mb-1" id="advancedToEmail" placeholder="To Email">
+                                            <input type="email" class="form-control form-control-sm mb-1" id="advancedFromEmail" placeholder="From Email (optional)">
+                                            <input type="text" class="form-control form-control-sm mb-1" id="advancedSubject" placeholder="Subject">
+                                            <textarea class="form-control form-control-sm mb-2" id="advancedBody" rows="2" placeholder="Body"></textarea>
+                                            <button class="btn btn-warning btn-sm" onclick="sendmailAdvanced()">
+                                                <i class="fas fa-paper-plane me-1"></i>Send Advanced
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="sendmailResult" class="small text-muted mt-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('single_email') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-envelope me-2"></i>Send Single Email
+                    </a>
+                    <a href="{{ url_for('bulk_email') }}" class="btn btn-outline-success">
+                        <i class="fas fa-users me-2"></i>Send Bulk Email
+                    </a>
+                    <a href="{{ url_for('personalized_email') }}" class="btn btn-outline-info">
+                        <i class="fas fa-user-edit me-2"></i>Send Personalized Email
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>Tips & Help
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Use CSV files for bulk email campaigns
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Personalize emails with {name} template
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Test connection before sending emails
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Use App Password for Gmail SMTP
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Connection Test Modal -->
+<div class="modal fade" id="connectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plug me-2"></i>Testing Connection
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="connectionStatus">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Testing...</span>
+                        </div>
+                        <p class="mt-2">Testing Gmail SMTP connection...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function testConnection() {
+    const modal = new bootstrap.Modal(document.getElementById('connectionModal'));
+    modal.show();
+    
+    fetch('/api/test-connection')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('connectionStatus');
+            if (data.success) {
+                statusDiv.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <p class="text-success">${data.message}</p>
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+                        <p class="text-danger">${data.error}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+                    <p class="text-danger">Connection test failed: ${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+// MCP Tools Functions
+function countR() {
+    const word = document.getElementById('countRInput').value;
+    if (!word) {
+        document.getElementById('countRResult').innerHTML = '<span class="text-danger">Please enter a word</span>';
+        return;
+    }
+    
+    fetch('/api/mcp/count-r', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({word: word})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('countRResult').innerHTML = `<span class="text-success">Result: ${data.result} 'r' letters found</span>`;
+        } else {
+            document.getElementById('countRResult').innerHTML = `<span class="text-danger">Error: ${data.error}</span>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById('countRResult').innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+    });
+}
+
+function getDesktopPath() {
+    fetch('/api/mcp/get-desktop-path')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('desktopResult').innerHTML = `<span class="text-success">Desktop Path: ${data.result}</span>`;
+        } else {
+            document.getElementById('desktopResult').innerHTML = `<span class="text-danger">Error: ${data.error}</span>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById('desktopResult').innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+    });
+}
+
+function listDesktopContents() {
+    fetch('/api/mcp/list-desktop')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const files = Array.isArray(data.result) ? data.result.join(', ') : data.result;
+            document.getElementById('desktopResult').innerHTML = `<span class="text-success">Files: ${files}</span>`;
+        } else {
+            document.getElementById('desktopResult').innerHTML = `<span class="text-danger">Error: ${data.error}</span>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById('desktopResult').innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+    });
+}
+
+function openGmail() {
+    fetch('/api/mcp/open-gmail', {method: 'POST'})
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('gmailResult').innerHTML = `<span class="text-success">${data.result}</span>`;
+        } else {
+            document.getElementById('gmailResult').innerHTML = `<span class="text-danger">Error: ${data.error}</span>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById('gmailResult').innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+    });
+}
+
+function openGmailCompose() {
+    fetch('/api/mcp/open-gmail-compose', {method: 'POST'})
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('gmailResult').innerHTML = `<span class="text-success">${data.result}</span>`;
+        } else {
+            document.getElementById('gmailResult').innerHTML = `<span class="text-danger">Error: ${data.error}</span>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById('gmailResult').innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+    });
+}
+
+function sendmailSimple() {
+    const toEmail = document.getElementById('simpleToEmail').value;
+    const subject = document.getElementById('simpleSubject').value;
+    const message = document.getElementById('simpleMessage').value;
+    
+    if (!toEmail || !subject || !message) {
+        document.getElementById('sendmailResult').innerHTML = '<span class="text-danger">Please fill all fields</span>';
+        return;
+    }
+    
+    fetch('/api/mcp/sendmail-simple', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({to_email: toEmail, subject: subject, message: message})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('sendmailResult').innerHTML = `<span class="text-success">${data.result}</span>`;
+        } else {
+            document.getElementById('sendmailResult').innerHTML = `<span class="text-danger">Error: ${data.error}</span>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById('sendmailResult').innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+    });
+}
+
+function sendmailAdvanced() {
+    const toEmail = document.getElementById('advancedToEmail').value;
+    const fromEmail = document.getElementById('advancedFromEmail').value;
+    const subject = document.getElementById('advancedSubject').value;
+    const body = document.getElementById('advancedBody').value;
+    
+    if (!toEmail || !subject || !body) {
+        document.getElementById('sendmailResult').innerHTML = '<span class="text-danger">Please fill required fields</span>';
+        return;
+    }
+    
+    const payload = {to_email: toEmail, subject: subject, body: body};
+    if (fromEmail) payload.from_email = fromEmail;
+    
+    fetch('/api/mcp/sendmail', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('sendmailResult').innerHTML = `<span class="text-success">${data.result}</span>`;
+        } else {
+            document.getElementById('sendmailResult').innerHTML = `<span class="text-danger">Error: ${data.error}</span>`;
+        }
+    })
+    .catch(error => {
+        document.getElementById('sendmailResult').innerHTML = `<span class="text-danger">Error: ${error.message}</span>`;
+    });
+}
+
+// Alert function for GitHub operations
+function showAlert(type, message) {
+    // Create alert element
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Insert at the top of the main content
+    const mainContent = document.querySelector('main.container');
+    mainContent.insertBefore(alertDiv, mainContent.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// GitHub Functions
+function showGitHubLogin() {
+    const modal = new bootstrap.Modal(document.getElementById('githubLoginModal'));
+    modal.show();
+}
+
+function showCreatePR() {
+    const modal = new bootstrap.Modal(document.getElementById('createPRModal'));
+    modal.show();
+    
+    // Pre-populate with smart defaults
+    prePopulateCreatePR();
+}
+
+function prePopulateCreatePR() {
+    // Auto-populate owner field if available
+    if (window.githubUsername) {
+        document.getElementById('prOwner').value = window.githubUsername.trim();
+    }
+    
+    // Set default base branch
+    document.getElementById('prBase').value = 'main';
+    
+    // Generate a default title
+    const defaultTitle = generateDefaultPRTitle();
+    document.getElementById('prTitle').value = defaultTitle;
+    
+    // Set default description
+    document.getElementById('prBody').value = '## Description\n\nAdd your description here...\n\n## Changes\n\n- [ ] Add your changes here\n\n## Testing\n\n- [ ] Tests added/updated\n- [ ] Manual testing completed';
+}
+
+function showCodeReview() {
+    const modal = new bootstrap.Modal(document.getElementById('codeReviewModal'));
+    modal.show();
+}
+
+function showListPRs() {
+    const modal = new bootstrap.Modal(document.getElementById('listPRsModal'));
+    modal.show();
+}
+
+function loginGitHub() {
+    const username = document.getElementById('githubUsername').value;
+    const token = document.getElementById('githubToken').value;
+    const password = document.getElementById('githubPassword').value;
+    const authMethod = document.querySelector('input[name="authMethod"]:checked').value;
+    
+    if (!username) {
+        showAlert('danger', 'Username is required');
+        return;
+    }
+    
+    const data = {
+        username: username,
+        token: authMethod === 'token' ? token : null,
+        password: authMethod === 'password' ? password : null
+    };
+    
+    fetch('/api/github/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('githubLoginModal')).hide();
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error);
+    });
+}
+
+function createPullRequest() {
+    const owner = document.getElementById('prOwner').value;
+    const repo = document.getElementById('prRepo').value;
+    const title = document.getElementById('prTitle').value;
+    const body = document.getElementById('prBody').value;
+    const head = document.getElementById('prHead').value;
+    const base = document.getElementById('prBase').value;
+    
+    if (!owner || !repo || !title || !head) {
+        showAlert('danger', 'Owner, repository, title, and source branch are required');
+        return;
+    }
+    
+    fetch('/api/github/create-pr', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            owner: owner,
+            repo: repo,
+            title: title,
+            body: body,
+            head: head,
+            base: base
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('createPRModal')).hide();
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error);
+    });
+}
+
+function listPullRequests() {
+    const owner = document.getElementById('listOwner').value;
+    const repo = document.getElementById('listRepo').value;
+    const state = document.getElementById('listState').value;
+    
+    if (!owner || !repo) {
+        showAlert('danger', 'Owner and repository are required');
+        return;
+    }
+    
+    const resultsDiv = document.getElementById('prListResults');
+    resultsDiv.innerHTML = '<p class="text-info">Loading...</p>';
+    
+    fetch('/api/github/list-prs', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            owner: owner,
+            repo: repo,
+            state: state
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let html = '<div class="list-group">';
+            data.pull_requests.forEach(pr => {
+                html += `<div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">#${pr.number}: ${pr.title}</h6>
+                            <small class="text-muted">by ${pr.user.login}</small>
+                        </div>
+                        <a href="${pr.html_url}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
+                    </div>
+                </div>`;
+            });
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        } else {
+            resultsDiv.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<p class="text-danger">Error: ${error}</p>`;
+    });
+}
+
+function submitCodeReview() {
+    const owner = document.getElementById('reviewOwner').value;
+    const repo = document.getElementById('reviewRepo').value;
+    const pullNumber = document.getElementById('reviewNumber').value;
+    const body = document.getElementById('reviewBody').value;
+    const event = document.getElementById('reviewEvent').value;
+    
+    if (!owner || !repo || !pullNumber || !body) {
+        showAlert('danger', 'All fields are required');
+        return;
+    }
+    
+    fetch('/api/github/review-pr', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            owner: owner,
+            repo: repo,
+            pull_number: parseInt(pullNumber),
+            body: body,
+            event: event
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            bootstrap.Modal.getInstance(document.getElementById('codeReviewModal')).hide();
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error: ' + error);
+    });
+}
+
+function testGitHubConnection() {
+    fetch('/api/github/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            username: '{{ github_config.username if github_config else "" }}',
+            token: '{{ github_config.token if github_config else "" }}'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'GitHub connection successful!');
+        } else {
+            showAlert('danger', 'GitHub connection failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error testing GitHub connection: ' + error);
+    });
+}
+
+// Enhanced Code Review Functions
+function loadPRDetails() {
+    const owner = document.getElementById('reviewOwner').value;
+    const repo = document.getElementById('reviewRepo').value;
+    const pullNumber = document.getElementById('reviewNumber').value;
+    
+    if (!owner || !repo || !pullNumber) {
+        showAlert('danger', 'Please fill in all PR information fields');
+        return;
+    }
+    
+    const contentDiv = document.getElementById('prDetailsContent');
+    contentDiv.innerHTML = '<p class="text-info">Loading PR details...</p>';
+    document.getElementById('prDetailsSection').style.display = 'block';
+    
+    fetch('/api/github/get-pr-details', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            owner: owner,
+            repo: repo,
+            pull_number: parseInt(pullNumber)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const pr = data.pr_details;
+            let html = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5>#${pr.number}: ${pr.title}</h5>
+                        <p class="text-muted">by ${pr.user}</p>
+                        <div class="mb-2">
+                            <span class="badge bg-${pr.state === 'open' ? 'success' : 'secondary'} me-2">${pr.state}</span>
+                            <span class="badge bg-info me-2">${pr.comments} comments</span>
+                            <span class="badge bg-warning me-2">${pr.review_comments} review comments</span>
+                            <span class="badge bg-primary me-2">${pr.commits} commits</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="badge bg-success me-2">+${pr.additions} additions</span>
+                            <span class="badge bg-danger me-2">-${pr.deletions} deletions</span>
+                            <span class="badge bg-info">${pr.changed_files} files changed</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="${pr.html_url}" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-external-link-alt me-1"></i>View on GitHub
+                        </a>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <strong>Head:</strong> ${pr.head.ref} (${pr.head.sha.substring(0, 7)})
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <strong>Base:</strong> ${pr.base.ref} (${pr.base.sha.substring(0, 7)})
+                        </small>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <strong>Description:</strong>
+                    <div class="border rounded p-2 bg-light">
+                        ${pr.body || 'No description provided'}
+                    </div>
+                </div>
+            `;
+            contentDiv.innerHTML = html;
+        } else {
+            contentDiv.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+        }
+    })
+    .catch(error => {
+        contentDiv.innerHTML = `<p class="text-danger">Error: ${error}</p>`;
+    });
+}
+
+function loadPRReviews() {
+    const owner = document.getElementById('reviewOwner').value;
+    const repo = document.getElementById('reviewRepo').value;
+    const pullNumber = document.getElementById('reviewNumber').value;
+    
+    if (!owner || !repo || !pullNumber) {
+        showAlert('danger', 'Please fill in all PR information fields');
+        return;
+    }
+    
+    const contentDiv = document.getElementById('prReviewsContent');
+    contentDiv.innerHTML = '<p class="text-info">Loading reviews...</p>';
+    document.getElementById('prReviewsSection').style.display = 'block';
+    
+    fetch('/api/github/get-pr-reviews', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            owner: owner,
+            repo: repo,
+            pull_number: parseInt(pullNumber)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.reviews.length === 0) {
+                contentDiv.innerHTML = '<p class="text-muted">No reviews found for this PR.</p>';
+            } else {
+                let html = '<div class="list-group">';
+                data.reviews.forEach(review => {
+                    const stateColor = review.state === 'APPROVED' ? 'success' : 
+                                     review.state === 'CHANGES_REQUESTED' ? 'warning' : 'info';
+                    html += `
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-${stateColor} me-2">${review.state}</span>
+                                        <strong>${review.user}</strong>
+                                        <small class="text-muted ms-2">${new Date(review.submitted_at).toLocaleString()}</small>
+                                    </div>
+                                    <div class="border rounded p-2 bg-light">
+                                        ${review.body || 'No comment provided'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                contentDiv.innerHTML = html;
+            }
+        } else {
+            contentDiv.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+        }
+    })
+    .catch(error => {
+        contentDiv.innerHTML = `<p class="text-danger">Error: ${error}</p>`;
+    });
+}
+
+function loadPRFiles() {
+    const owner = document.getElementById('reviewOwner').value;
+    const repo = document.getElementById('reviewRepo').value;
+    const pullNumber = document.getElementById('reviewNumber').value;
+    
+    if (!owner || !repo || !pullNumber) {
+        showAlert('danger', 'Please fill in all PR information fields');
+        return;
+    }
+    
+    const contentDiv = document.getElementById('prFilesContent');
+    contentDiv.innerHTML = '<p class="text-info">Loading files...</p>';
+    document.getElementById('prFilesSection').style.display = 'block';
+    
+    fetch('/api/github/get-pr-files', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            owner: owner,
+            repo: repo,
+            pull_number: parseInt(pullNumber)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let html = '<div class="list-group">';
+            data.files.forEach(file => {
+                const statusColor = file.status === 'added' ? 'success' : 
+                                  file.status === 'removed' ? 'danger' : 'warning';
+                html += `
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <span class="badge bg-${statusColor} me-2">${file.status}</span>
+                                    <strong>${file.filename}</strong>
+                                </div>
+                                <div class="small text-muted">
+                                    <span class="badge bg-success me-1">+${file.additions}</span>
+                                    <span class="badge bg-danger me-1">-${file.deletions}</span>
+                                    <span class="badge bg-info">${file.changes} changes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            contentDiv.innerHTML = html;
+        } else {
+            contentDiv.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+        }
+    })
+    .catch(error => {
+        contentDiv.innerHTML = `<p class="text-danger">Error: ${error}</p>`;
+    });
+}
+
+function setReviewTemplate(type) {
+    const textarea = document.getElementById('reviewBody');
+    const eventSelect = document.getElementById('reviewEvent');
+    
+    if (type === 'approve') {
+        eventSelect.value = 'APPROVE';
+        textarea.value = `✅ **Approved**
+
+This pull request looks good! The changes are well-implemented and follow the project's coding standards.
+
+**What I liked:**
+- Clean and readable code
+- Proper error handling
+- Good test coverage
+- Follows project conventions
+
+**Suggestions for future improvements:**
+- Consider adding more documentation
+- Maybe add some additional edge case tests
+
+Great work! 🚀`;
+    } else if (type === 'changes') {
+        eventSelect.value = 'REQUEST_CHANGES';
+        textarea.value = `⚠️ **Changes Requested**
+
+Thank you for the pull request! However, there are some issues that need to be addressed before this can be merged.
+
+**Issues to fix:**
+- [ ] Please fix the linting errors
+- [ ] Add missing error handling
+- [ ] Update the documentation
+- [ ] Add unit tests for the new functionality
+
+**Specific concerns:**
+1. The error handling could be more robust
+2. Some functions lack proper documentation
+3. Consider adding input validation
+
+Please address these issues and I'll be happy to review again! 🙏`;
+    }
+}
+
+function showMyRepositories() {
+    const modal = new bootstrap.Modal(document.getElementById('myReposModal'));
+    modal.show();
+}
+
+function loadMyRepositories() {
+    const resultsDiv = document.getElementById('reposResults');
+    resultsDiv.innerHTML = '<p class="text-info text-center">Loading your repositories...</p>';
+    
+    fetch('/api/github/list-my-repos', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let html = '<div class="row">';
+            data.repositories.forEach(repo => {
+                const privateBadge = repo.private ? 
+                    '<span class="badge bg-secondary me-2">Private</span>' : 
+                    '<span class="badge bg-success me-2">Public</span>';
+                
+                const languageBadge = repo.language ? 
+                    `<span class="badge bg-info me-2">${repo.language}</span>` : '';
+                
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-folder me-2"></i>${repo.name}
+                                </h6>
+                                <p class="card-text text-muted small">${repo.description || 'No description'}</p>
+                                <div class="mb-2">
+                                    ${privateBadge}
+                                    ${languageBadge}
+                                    <span class="badge bg-warning me-2">
+                                        <i class="fas fa-star me-1"></i>${repo.stargazers_count}
+                                    </span>
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-code-branch me-1"></i>${repo.forks_count}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        Updated: ${new Date(repo.updated_at).toLocaleDateString()}
+                                    </small>
+                                    <a href="${repo.html_url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-external-link-alt me-1"></i>View
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        } else {
+            resultsDiv.innerHTML = `<p class="text-danger text-center">Error: ${data.error}</p>`;
+        }
+    })
+    .catch(error => {
+        resultsDiv.innerHTML = `<p class="text-danger text-center">Error: ${error}</p>`;
+    });
+}
+
+// Toggle auth method fields
+document.addEventListener('DOMContentLoaded', function() {
+    const tokenAuth = document.getElementById('tokenAuth');
+    const passwordAuth = document.getElementById('passwordAuth');
+    const tokenField = document.getElementById('tokenField');
+    const passwordField = document.getElementById('passwordField');
+    
+    if (tokenAuth && passwordAuth) {
+        tokenAuth.addEventListener('change', function() {
+            tokenField.style.display = 'block';
+            passwordField.style.display = 'none';
+        });
+        
+        passwordAuth.addEventListener('change', function() {
+            tokenField.style.display = 'none';
+            passwordField.style.display = 'block';
+        });
+    }
+});
+
+// --- Auto-Population for Code Review ---
+
+document.addEventListener('DOMContentLoaded', function() {
+    // When the Code Review modal is shown, load the user's repositories
+    const codeReviewModal = document.getElementById('codeReviewModal');
+    if (codeReviewModal) {
+        codeReviewModal.addEventListener('show.bs.modal', function() {
+            loadRecentRepositories();
+        });
+    }
+});
+
+function loadRecentRepositories() {
+    const select = document.getElementById('recentReposSelect');
+    if (!select) return;
+    select.innerHTML = '<option value="">Loading...</option>';
+    fetch('/api/github/list-my-repos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let html = '<option value="">Select a repository...</option>';
+            data.repositories.forEach(repo => {
+                html += `<option value="${repo.name}">${repo.name}</option>`;
+            });
+            select.innerHTML = html;
+        } else {
+            select.innerHTML = `<option value="">Error loading repos</option>`;
+        }
+    })
+    .catch(() => {
+        select.innerHTML = '<option value="">Error loading repos</option>';
+    });
+}
+
+function loadRepoPRs() {
+    const select = document.getElementById('recentReposSelect');
+    const repo = select.value;
+    if (!repo) return;
+    const owner = window.githubUsername;
+    if (!owner) {
+        showAlert('danger', 'GitHub username not set. Please login to GitHub first.');
+        return;
+    }
+    console.log('Loading PRs for owner:', owner, 'repo:', repo);
+    const requestBody = { owner: owner, repo: repo };
+    console.log('Request body:', requestBody);
+    
+    // Remove any existing PR select or message
+    const existingElements = select.parentNode.querySelectorAll('.form-control.my-2, .alert.my-2');
+    existingElements.forEach(el => el.remove());
+    
+    fetch('/api/github/list-repo-prs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('API response:', data);
+        if (data.success) {
+            if (data.pull_requests && data.pull_requests.length > 0) {
+                // Show a modal or dropdown to select a PR
+                let prList = data.pull_requests.map(pr =>
+                    `<option value="${pr.number}">#${pr.number}: ${pr.title}</option>`
+                ).join('');
+                let prSelect = document.createElement('select');
+                prSelect.className = 'form-control my-2';
+                prSelect.innerHTML = '<option value="">Select a PR...</option>' + prList;
+                prSelect.onchange = function() {
+                    const selected = prSelect.value;
+                    if (selected) {
+                        document.getElementById('reviewOwner').value = owner;
+                        document.getElementById('reviewRepo').value = repo;
+                        document.getElementById('reviewNumber').value = selected;
+                    }
+                };
+                select.parentNode.appendChild(prSelect);
+            } else {
+                // No pull requests found
+                let messageDiv = document.createElement('div');
+                messageDiv.className = 'alert alert-info my-2';
+                messageDiv.innerHTML = `
+                    <i class="fas fa-info-circle me-2"></i>
+                    No pull requests found in repository <strong>${repo}</strong>.
+                    <br><small>You can create a pull request on GitHub to test the review functionality.</small>
+                `;
+                select.parentNode.appendChild(messageDiv);
+            }
+        } else {
+            console.error('API returned error:', data.error);
+            showAlert('danger', data.error);
+        }
+    })
+    .catch((error) => {
+        console.error('Fetch error:', error);
+        showAlert('danger', 'Error loading PRs for repository: ' + error.message);
+    });
+}
+
+// Quick Create PR Functions
+function showQuickCreatePR() {
+    const modal = new bootstrap.Modal(document.getElementById('quickCreatePRModal'));
+    modal.show();
+    
+    // Auto-populate owner field if available
+    if (window.githubUsername) {
+        document.getElementById('quickPrOwner').value = window.githubUsername.trim();
+    }
+    
+    // Pre-populate with smart defaults
+    prePopulateQuickPR();
+    
+    loadQuickRepositories();
+    updateQuickTemplate();
+}
+
+function prePopulateQuickPR() {
+    // Set default PR type
+    document.getElementById('quickPrType').value = 'feature';
+    
+    // Set default base branch
+    document.getElementById('quickPrBase').value = 'main';
+    
+    // Generate a default title based on current time/context
+    const defaultTitle = generateDefaultPRTitle();
+    document.getElementById('quickPrTitle').value = defaultTitle;
+    
+    // Set default description
+    document.getElementById('quickPrDescription').value = 'Add new feature or improvement';
+    
+    // Update template immediately
+    updateQuickTemplate();
+}
+
+function generateDefaultPRTitle() {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+    const timeStr = now.toTimeString().split(' ')[0].substring(0, 5); // HH:MM format
+    
+    // Get the selected repository name for context
+    const repoSelect = document.getElementById('quickPrRepo');
+    const repoName = repoSelect ? repoSelect.value : '';
+    
+    // Generate context-aware title
+    let title = `Add new feature - ${dateStr}`;
+    
+    if (repoName) {
+        // Try to make the title more specific based on repo name
+        if (repoName.toLowerCase().includes('api')) {
+            title = `Add new API endpoint - ${dateStr}`;
+        } else if (repoName.toLowerCase().includes('ui') || repoName.toLowerCase().includes('frontend')) {
+            title = `Add new UI component - ${dateStr}`;
+        } else if (repoName.toLowerCase().includes('backend') || repoName.toLowerCase().includes('server')) {
+            title = `Add new backend feature - ${dateStr}`;
+        } else if (repoName.toLowerCase().includes('test')) {
+            title = `Add new tests - ${dateStr}`;
+        } else if (repoName.toLowerCase().includes('doc')) {
+            title = `Update documentation - ${dateStr}`;
+        }
+    }
+    
+    return title;
+}
+
+function generateFeatureBranchName(title) {
+    // Convert title to a valid branch name
+    let branchName = title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+        .replace(/\s+/g, '-') // Replace spaces with hyphens
+        .replace(/-+/g, '-') // Replace multiple hyphens with single
+        .trim();
+    
+    // Add feature prefix if not present
+    if (!branchName.startsWith('feature/')) {
+        branchName = `feature/${branchName}`;
+    }
+    
+    // Limit length
+    if (branchName.length > 50) {
+        branchName = branchName.substring(0, 50);
+    }
+    
+    return branchName;
+}
+
+function updateQuickTemplate() {
+    const type = document.getElementById('quickPrType').value;
+    const title = document.getElementById('quickPrTitle').value;
+    const description = document.getElementById('quickPrDescription').value;
+    const repo = document.getElementById('quickPrRepo').value;
+    
+    fetch('/api/github/generate-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: type, title: title, description: description })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let template = data.template;
+            
+            // Add repository-specific context
+            if (repo) {
+                template = template.replace('## 🚀 Feature:', `## 🚀 Feature for ${repo}:`);
+                template = template.replace('## 🐛 Bug Fix:', `## 🐛 Bug Fix in ${repo}:`);
+                template = template.replace('## 🔥 Hotfix:', `## 🔥 Hotfix for ${repo}:`);
+                template = template.replace('## 🔧 Refactor:', `## 🔧 Refactor in ${repo}:`);
+                template = template.replace('## 📚 Documentation:', `## 📚 Documentation for ${repo}:`);
+            }
+            
+            document.getElementById('quickPrTemplate').value = template;
+            
+            // Suggest branch name if title is available
+            if (title) {
+                suggestBranchName(title);
+            }
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error generating template: ' + error.message);
+    });
+}
+
+function suggestBranchName(title) {
+    const suggestedBranch = generateFeatureBranchName(title);
+    const headSelect = document.getElementById('quickPrHead');
+    
+    // Add the suggested branch as an option if it doesn't exist
+    let exists = false;
+    for (let i = 0; i < headSelect.options.length; i++) {
+        if (headSelect.options[i].value === suggestedBranch) {
+            exists = true;
+            break;
+        }
+    }
+    
+    if (!exists) {
+        const option = document.createElement('option');
+        option.value = suggestedBranch;
+        option.text = `${suggestedBranch} (suggested)`;
+        option.style.fontStyle = 'italic';
+        headSelect.add(option);
+    }
+    
+    // Select the suggested branch
+    headSelect.value = suggestedBranch;
+}
+
+function quickCreatePullRequest() {
+    const owner = document.getElementById('quickPrOwner').value.trim();
+    const repo = document.getElementById('quickPrRepo').value;
+    const head = document.getElementById('quickPrHead').value;
+    const base = document.getElementById('quickPrBase').value;
+    const title = document.getElementById('quickPrTitle').value;
+    const description = document.getElementById('quickPrDescription').value;
+    const type = document.getElementById('quickPrType').value;
+
+    console.log('Creating PR with:', { owner, repo, head, base, title, type });
+
+    // Enhanced validation
+    if (!owner) {
+        showAlert('danger', 'Repository owner is required.');
+        return;
+    }
+    if (!repo) {
+        showAlert('danger', 'Repository name is required.');
+        return;
+    }
+    if (!head) {
+        showAlert('danger', 'Head branch is required. Please select a branch or wait for branches to load.');
+        return;
+    }
+    if (!base) {
+        showAlert('danger', 'Base branch is required.');
+        return;
+    }
+    if (!title) {
+        showAlert('danger', 'PR title is required.');
+        return;
+    }
+
+    // Show loading state
+    const button = document.querySelector('#quickCreatePRModal .btn-warning');
+    const originalText = button.textContent;
+    button.textContent = 'Creating PR...';
+    button.disabled = true;
+
+    fetch('/api/github/quick-create-pr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            owner: owner,
+            repo: repo,
+            title: title,
+            head: head,
+            base: base,
+            type: type,
+            description: description
+        })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('PR creation response:', data);
+        if (data.success) {
+            showAlert('success', `Pull request created successfully! <a href="${data.url}" target="_blank">View PR #${data.number}</a>`);
+            bootstrap.Modal.getInstance(document.getElementById('quickCreatePRModal')).hide();
+            
+            // Reset form
+            document.getElementById('quickPrTitle').value = '';
+            document.getElementById('quickPrDescription').value = '';
+            document.getElementById('quickPrTemplate').value = '';
+        } else {
+            showAlert('danger', data.error || 'Failed to create pull request');
+        }
+    })
+    .catch(error => {
+        console.error('Error creating PR:', error);
+        showAlert('danger', 'Error creating PR: ' + error.message);
+    })
+    .finally(() => {
+        // Restore button state
+        button.textContent = originalText;
+        button.disabled = false;
+    });
+}
+
+// Enhanced Create PR Functions
+function loadBranches() {
+    const owner = document.getElementById('prOwner').value;
+    const repo = document.getElementById('prRepo').value;
+    if (!owner || !repo) {
+        showAlert('danger', 'Owner and repository are required to load branches.');
+        return;
+    }
+    
+    fetch('/api/github/get-branches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owner: owner, repo: repo })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const headSelect = document.getElementById('prHead');
+            headSelect.innerHTML = '<option value="">Select head branch...</option>';
+            data.branches.forEach(branch => {
+                headSelect.innerHTML += `<option value="${branch.name}">${branch.name}</option>`;
+            });
+            showAlert('success', `Loaded ${data.branches.length} branches`);
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error loading branches: ' + error.message);
+    });
+}
+
+function generatePRTemplate() {
+    const title = document.getElementById('prTitle').value;
+    if (!title) {
+        showAlert('warning', 'Please enter a PR title first.');
+        return;
+    }
+    
+    fetch('/api/github/generate-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            type: 'feature', 
+            title: title, 
+            description: 'Describe your changes here...' 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('prBody').value = data.template;
+            showAlert('success', 'PR template generated successfully!');
+        } else {
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error generating template: ' + error.message);
+    });
+}
+
+function loadQuickRepositories() {
+    const select = document.getElementById('quickPrRepo');
+    select.innerHTML = '<option value="">Loading repositories...</option>';
+    
+    fetch('/api/github/list-my-repos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            select.innerHTML = '<option value="">Select repository...</option>';
+            
+            // Sort repositories by update date (most recent first)
+            const sortedRepos = data.repositories.sort((a, b) => 
+                new Date(b.updated_at) - new Date(a.updated_at)
+            );
+            
+            sortedRepos.forEach(repo => {
+                const language = repo.language ? ` (${repo.language})` : '';
+                const privateIcon = repo.private ? ' 🔒' : '';
+                select.innerHTML += `<option value="${repo.name}">${repo.name}${language}${privateIcon}</option>`;
+            });
+            
+            // Auto-select the most recently updated repository
+            if (sortedRepos.length > 0) {
+                const mostRecentRepo = sortedRepos[0];
+                select.value = mostRecentRepo.name;
+                
+                // Show repository info
+                showRepositoryInfo(mostRecentRepo);
+                
+                // Auto-load branches for the selected repo
+                loadQuickBranches();
+            }
+        } else {
+            select.innerHTML = '<option value="">Error loading repos</option>';
+            showAlert('danger', data.error);
+        }
+    })
+    .catch(error => {
+        select.innerHTML = '<option value="">Error loading repos</option>';
+        showAlert('danger', 'Error loading repositories: ' + error.message);
+    });
+}
+
+function showRepositoryInfo(repo) {
+    // Create or update repository info display
+    let infoDiv = document.getElementById('repoInfo');
+    if (!infoDiv) {
+        infoDiv = document.createElement('div');
+        infoDiv.id = 'repoInfo';
+        infoDiv.className = 'alert alert-info mt-2';
+        document.getElementById('quickPrRepo').parentNode.appendChild(infoDiv);
+    }
+    
+    const lastUpdated = new Date(repo.updated_at).toLocaleDateString();
+    infoDiv.innerHTML = `
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>${repo.name}</strong> - ${repo.language || 'No language detected'}
+        <br><small>Last updated: ${lastUpdated} | Stars: ${repo.stargazers_count} | Forks: ${repo.forks_count}</small>
+    `;
+}
+
+function loadQuickBranches() {
+    const owner = document.getElementById('quickPrOwner').value.trim(); // Trim whitespace
+    const repo = document.getElementById('quickPrRepo').value;
+    console.log('Loading branches for:', owner, repo);
+    
+    if (!owner || !repo) {
+        console.log('Owner or repo is empty, resetting branch select');
+        document.getElementById('quickPrHead').innerHTML = '<option value="">Select head branch...</option>';
+        if (!owner) {
+            showAlert('warning', 'Please enter the repository owner (username).');
+        }
+        if (!repo) {
+            showAlert('warning', 'Please select a repository.');
+        }
+        return;
+    }
+    
+    document.getElementById('quickPrHead').innerHTML = '<option value="">Loading branches...</option>';
+
+    const requestBody = { owner: owner, repo: repo };
+    console.log('Request body:', requestBody);
+
+    fetch('/api/github/get-branches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('API response:', data);
+        if (data.success) {
+            document.getElementById('quickPrHead').innerHTML = '<option value="">Select head branch...</option>';
+            if (data.branches && data.branches.length > 0) {
+                data.branches.forEach(branch => {
+                    document.getElementById('quickPrHead').innerHTML += `<option value="${branch.name}">${branch.name}</option>`;
+                });
+                console.log(`Loaded ${data.branches.length} branches`);
+                
+                // Auto-select the first branch (usually main/master)
+                if (data.branches.length > 0) {
+                    const firstBranch = data.branches[0].name;
+                    document.getElementById('quickPrHead').value = firstBranch;
+                    
+                    // Generate a feature branch name based on the title
+                    const title = document.getElementById('quickPrTitle').value;
+                    if (title && (firstBranch === 'main' || firstBranch === 'master')) {
+                        const featureBranchName = generateFeatureBranchName(title);
+                        document.getElementById('quickPrHead').value = featureBranchName;
+                    }
+                }
+                
+                showAlert('success', `Loaded ${data.branches.length} branches from ${owner}/${repo}`);
+            } else {
+                document.getElementById('quickPrHead').innerHTML = '<option value="">No branches found</option>';
+                console.log('No branches found in repository');
+                suggestInitialCommit(owner, repo);
+                showAlert('info', `No branches found in repository ${owner}/${repo}. This might be an empty repository.`);
+            }
+        } else {
+            document.getElementById('quickPrHead').innerHTML = '<option value="">Error loading branches</option>';
+            console.error('API returned error:', data.error);
+            
+            // Provide more helpful error messages
+            let errorMessage = data.error;
+            if (data.error.includes('404')) {
+                errorMessage = `Repository ${owner}/${repo} not found. Please check the repository name and owner.`;
+            } else if (data.error.includes('403')) {
+                errorMessage = `Access denied to repository ${owner}/${repo}. You may not have permission to view this repository.`;
+            } else if (data.error.includes('No branches found')) {
+                errorMessage = `Repository ${owner}/${repo} appears to be empty (no branches). You may need to create an initial commit first.`;
+                suggestInitialCommit(owner, repo);
+            }
+            
+            showAlert('danger', errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        document.getElementById('quickPrHead').innerHTML = '<option value="">Error loading branches</option>';
+        showAlert('danger', 'Error loading branches: ' + error.message);
+    });
+}
+
+function onRepositoryChange() {
+    const repo = document.getElementById('quickPrRepo').value;
+    if (repo) {
+        // Update title based on new repository
+        const newTitle = generateDefaultPRTitle();
+        document.getElementById('quickPrTitle').value = newTitle;
+        
+        // Load branches for the selected repository
+        loadQuickBranches();
+        
+        // Update template with new context
+        updateQuickTemplate();
+    }
+}
+
+function suggestInitialCommit(owner, repo) {
+    const infoDiv = document.getElementById('repoInfo');
+    if (infoDiv) {
+        infoDiv.innerHTML = `
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Empty Repository</strong>
+                <br><small>Repository ${owner}/${repo} appears to be empty. You may need to:</small>
+                <ul class="mb-0 mt-1">
+                    <li>Create an initial commit in the repository</li>
+                    <li>Push some code to create the first branch</li>
+                    <li>Or select a different repository with existing branches</li>
+                </ul>
+            </div>
+        `;
+    }
+}
+</script>
+{% endblock %} 

@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration - Email Agent{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-cog me-2"></i>Gmail SMTP Configuration
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-envelope me-2"></i>Gmail SMTP Settings
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="configForm">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope me-1"></i>Gmail Address
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" 
+                               value="{{ config.email if config else '' }}" required>
+                        <div class="form-text">Enter your Gmail address</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="appPassword" class="form-label">
+                            <i class="fas fa-key me-1"></i>App Password
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="appPassword" name="appPassword" 
+                                   value="{{ config.app_password if config else '' }}" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                <i class="fas fa-eye" id="passwordIcon"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">
+                            <strong>Important:</strong> Use App Password, not your regular Gmail password
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-outline-primary me-md-2" onclick="testConnection()">
+                            <i class="fas fa-plug me-1"></i>Test Connection
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="saveButton">
+                            <i class="fas fa-save me-1"></i>Save Configuration
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Connection Status -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Connection Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="connectionStatus">
+                    {% if config %}
+                        <div class="d-flex align-items-center">
+                            <span class="status-indicator success"></span>
+                            <span class="text-success">Configuration loaded</span>
+                        </div>
+                        <p class="text-muted mt-2 mb-0">Email: {{ config.email }}</p>
+                    {% else %}
+                        <div class="d-flex align-items-center">
+                            <span class="status-indicator warning"></span>
+                            <span class="text-warning">No configuration found</span>
+                        </div>
+                        <p class="text-muted mt-2 mb-0">Please configure Gmail SMTP settings</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Setup Guide -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-question-circle me-2"></i>Setup Guide
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="setupGuide">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step1">
+                                Step 1: Enable 2-Factor Authentication
+                            </button>
+                        </h2>
+                        <div id="step1" class="accordion-collapse collapse" data-bs-parent="#setupGuide">
+                            <div class="accordion-body">
+                                <ol>
+                                    <li>Go to <a href="https://myaccount.google.com/security" target="_blank">Google Security</a></li>
+                                    <li>Click on "2-Step Verification"</li>
+                                    <li>Follow the steps to enable it</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step2">
+                                Step 2: Generate App Password
+                            </button>
+                        </h2>
+                        <div id="step2" class="accordion-collapse collapse" data-bs-parent="#setupGuide">
+                            <div class="accordion-body">
+                                <ol>
+                                    <li>Go to <a href="https://myaccount.google.com/apppasswords" target="_blank">App Passwords</a></li>
+                                    <li>Select "Mail" from the dropdown</li>
+                                    <li>Click "Generate"</li>
+                                    <li>Copy the 16-character password</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#step3">
+                                Step 3: Configure SMTP
+                            </button>
+                        </h2>
+                        <div id="step3" class="accordion-collapse collapse" data-bs-parent="#setupGuide">
+                            <div class="accordion-body">
+                                <ol>
+                                    <li>Enter your Gmail address above</li>
+                                    <li>Enter the App Password (not your regular password)</li>
+                                    <li>Click "Test Connection" to verify</li>
+                                    <li>Click "Save Configuration"</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SMTP Details -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-server me-2"></i>SMTP Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Server:</strong></td>
+                        <td>smtp.gmail.com</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Port:</strong></td>
+                        <td>587</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Security:</strong></td>
+                        <td>TLS</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Authentication:</strong></td>
+                        <td>Required</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Connection Modal -->
+<div class="modal fade" id="testConnectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plug me-2"></i>Testing Connection
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="testConnectionStatus">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Testing...</span>
+                        </div>
+                        <p class="mt-2">Testing Gmail SMTP connection...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassword() {
+    const passwordInput = document.getElementById('appPassword');
+    const passwordIcon = document.getElementById('passwordIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        passwordIcon.className = 'fas fa-eye-slash';
+    } else {
+        passwordInput.type = 'password';
+        passwordIcon.className = 'fas fa-eye';
+    }
+}
+
+function testConnection() {
+    const email = document.getElementById('email').value.trim();
+    const appPassword = document.getElementById('appPassword').value.trim();
+    
+    if (!email || !appPassword) {
+        EmailAgent.showNotification('Please fill in both email and app password', 'error');
+        return;
+    }
+    
+    if (!EmailAgent.validateEmail(email)) {
+        EmailAgent.showNotification('Please enter a valid email address', 'error');
+        return;
+    }
+    
+    // Show test modal
+    const testModal = new bootstrap.Modal(document.getElementById('testConnectionModal'));
+    testModal.show();
+    
+    // Test connection
+    fetch('/api/test-connection')
+        .then(response => response.json())
+        .then(data => {
+            const statusDiv = document.getElementById('testConnectionStatus');
+            if (data.success) {
+                statusDiv.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                        <p class="text-success">${data.message}</p>
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+                        <p class="text-danger">${data.error}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            const statusDiv = document.getElementById('testConnectionStatus');
+            statusDiv.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+                    <p class="text-danger">Connection test failed: ${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+// Form submission
+document.getElementById('configForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value.trim();
+    const appPassword = document.getElementById('appPassword').value.trim();
+    
+    if (!email || !appPassword) {
+        EmailAgent.showNotification('Please fill in all fields', 'error');
+        return;
+    }
+    
+    if (!EmailAgent.validateEmail(email)) {
+        EmailAgent.showNotification('Please enter a valid email address', 'error');
+        return;
+    }
+    
+    // Show loading state
+    const saveButton = document.getElementById('saveButton');
+    EmailAgent.showLoading(saveButton, 'Saving...');
+    
+    // Save configuration
+    fetch('/api/save-config', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            email: email,
+            app_password: appPassword
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        EmailAgent.hideLoading(saveButton);
+        
+        if (data.success) {
+            EmailAgent.showNotification(data.message, 'success');
+            
+            // Update connection status
+            const statusDiv = document.getElementById('connectionStatus');
+            statusDiv.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <span class="status-indicator success"></span>
+                    <span class="text-success">Configuration saved</span>
+                </div>
+                <p class="text-muted mt-2 mb-0">Email: ${email}</p>
+            `;
+        } else {
+            EmailAgent.showNotification(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        EmailAgent.hideLoading(saveButton);
+        EmailAgent.showNotification('Failed to save configuration: ' + error.message, 'error');
+    });
+});
+</script>
+{% endblock %} 
