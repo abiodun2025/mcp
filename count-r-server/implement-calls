@@ -1,0 +1,43 @@
+You are working on an MCP (Model Context Protocol) server that exposes tools for an AI agent. Implement a new tool called `call_phone` that makes a phone call using Google Voice via browser automation.
+
+✅ Requirements:
+1. Use Python for the MCP server and integrate the tool properly.
+2. Use Playwright (preferred) or Selenium for Google Voice automation.
+3. The tool should accept:
+   - phone_number: string in E.164 format (e.g., +1234567890)
+4. When invoked:
+   - Launch headless browser
+   - Log into Google Voice (use stored credentials or session cookies)
+   - Navigate to the Google Voice call page
+   - Enter the phone number and click the "Call" button
+5. Return JSON response:
+   - status: "calling"
+   - phone_number: the requested number
+6. Handle errors (login fail, number invalid) and return meaningful messages.
+7. Expose this tool in MCP with:
+   - name: "call_phone"
+   - description: "Place a phone call using Google Voice"
+   - input_schema: JSON schema for the `phone_number`
+8. The MCP server should follow JSON-RPC for tool calls.
+9. Provide an example JSON-RPC request:
+{
+  "jsonrpc": "2.0",
+  "id": "1",
+  "method": "tools/call",
+  "params": {
+    "name": "call_phone",
+    "arguments": {
+      "phone_number": "+123456789"
+    }
+  }
+}
+
+✅ Expected Output:
+- Complete Python code for:
+  - The tool definition
+  - Google Voice Playwright automation
+  - Integration into the MCP server
+- Clear comments for maintainability
+- Example of success and failure responses
+
+Important: Use secure credential handling (environment variables) and explain how to store Google login cookies for persistent sessions.

@@ -1,0 +1,9 @@
+{
+  "webhooks": {
+    "general": "https://your-org.webhook.office.com/webhookb2/your-webhook-url-1",
+    "alerts": "https://your-org.webhook.office.com/webhookb2/your-webhook-url-2",
+    "dev-team": "https://your-org.webhook.office.com/webhookb2/your-webhook-url-3",
+    "ops-team": "https://your-org.webhook.office.com/webhookb2/your-webhook-url-4"
+  },
+  "description": "Configure your Teams webhook URLs here. You can also set TEAMS_WEBHOOKS environment variable as JSON string."
+} 
