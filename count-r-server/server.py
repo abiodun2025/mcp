@@ -15,6 +15,7 @@ from mcp.server.fastmcp import FastMCP
 from workflow_orchestrator import WorkflowOrchestrator, WorkflowStep, WorkflowTemplates
 from google_voice_caller import GoogleVoiceCaller
 from slack_teams_tools import slack_tools, teams_tools
+from github_tools import github_tools
 
 def signal_handler(sig, frame):
     print("Shutting down Server......")
@@ -461,6 +462,205 @@ def teams_list_channels() -> dict:
         Dict with list of configured channels
     """
     return teams_tools.list_channels()
+
+# GitHub Tools
+
+@mcp.tool(name="github_create_pull_request")
+def github_create_pull_request(owner: str, repo: str, title: str, body: str, 
+                              head: str, base: str = "main") -> dict:
+    """
+    Create a new pull request on GitHub.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        title: Pull request title
+        body: Pull request description
+        head: Source branch name
+        base: Target branch name (default: main)
+        
+    Returns:
+        Dict with pull request details or error message
+    """
+    return github_tools.create_pull_request(owner, repo, title, body, head, base)
+
+@mcp.tool(name="github_list_pull_requests")
+def github_list_pull_requests(owner: str, repo: str, state: str = "open") -> dict:
+    """
+    List pull requests in a GitHub repository.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        state: PR state filter (open, closed, all)
+        
+    Returns:
+        Dict with list of pull requests
+    """
+    return github_tools.list_pull_requests(owner, repo, state)
+
+@mcp.tool(name="github_get_pull_request")
+def github_get_pull_request(owner: str, repo: str, pr_number: int) -> dict:
+    """
+    Get details of a specific pull request.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        pr_number: Pull request number
+        
+    Returns:
+        Dict with pull request details
+    """
+    return github_tools.get_pull_request(owner, repo, pr_number)
+
+@mcp.tool(name="github_review_pull_request")
+def github_review_pull_request(owner: str, repo: str, pr_number: int, 
+                              event: str, body: str = "") -> dict:
+    """
+    Review a pull request (approve, request changes, or comment).
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        pr_number: Pull request number
+        event: Review event (APPROVE, REQUEST_CHANGES, COMMENT)
+        body: Review comment
+        
+    Returns:
+        Dict with review details
+    """
+    return github_tools.review_pull_request(owner, repo, pr_number, event, body)
+
+@mcp.tool(name="github_add_comment_to_pr")
+def github_add_comment_to_pr(owner: str, repo: str, pr_number: int, 
+                            body: str, commit_id: str = None, path: str = None, 
+                            line: int = None) -> dict:
+    """
+    Add a comment to a pull request.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        pr_number: Pull request number
+        body: Comment text
+        commit_id: Optional commit SHA for line-specific comment
+        path: Optional file path for line-specific comment
+        line: Optional line number for line-specific comment
+        
+    Returns:
+        Dict with comment details
+    """
+    return github_tools.add_comment_to_pr(owner, repo, pr_number, body, commit_id, path, line)
+
+@mcp.tool(name="github_merge_pull_request")
+def github_merge_pull_request(owner: str, repo: str, pr_number: int, 
+                             merge_method: str = "merge") -> dict:
+    """
+    Merge a pull request.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        pr_number: Pull request number
+        merge_method: Merge method (merge, squash, rebase)
+        
+    Returns:
+        Dict with merge result
+    """
+    return github_tools.merge_pull_request(owner, repo, pr_number, merge_method)
+
+@mcp.tool(name="github_get_repository_status")
+def github_get_repository_status(owner: str, repo: str) -> dict:
+    """
+    Get repository status and information.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        
+    Returns:
+        Dict with repository details
+    """
+    return github_tools.get_repository_status(owner, repo)
+
+@mcp.tool(name="github_list_branches")
+def github_list_branches(owner: str, repo: str) -> dict:
+    """
+    List branches in a repository.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        
+    Returns:
+        Dict with list of branches
+    """
+    return github_tools.list_branches(owner, repo)
+
+@mcp.tool(name="github_create_branch")
+def github_create_branch(owner: str, repo: str, branch_name: str, 
+                        source_sha: str) -> dict:
+    """
+    Create a new branch in a repository.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        branch_name: Name of the new branch
+        source_sha: SHA of the commit to branch from
+        
+    Returns:
+        Dict with branch creation result
+    """
+    return github_tools.create_branch(owner, repo, branch_name, source_sha)
+
+@mcp.tool(name="github_get_commit_details")
+def github_get_commit_details(owner: str, repo: str, commit_sha: str) -> dict:
+    """
+    Get details of a specific commit.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        commit_sha: SHA of the commit
+        
+    Returns:
+        Dict with commit details
+    """
+    return github_tools.get_commit_details(owner, repo, commit_sha)
+
+@mcp.tool(name="github_get_file_contents")
+def github_get_file_contents(owner: str, repo: str, path: str, 
+                            ref: str = "main") -> dict:
+    """
+    Get contents of a file in the repository.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        path: File path in the repository
+        ref: Branch or commit reference (default: main)
+        
+    Returns:
+        Dict with file contents
+    """
+    return github_tools.get_file_contents(owner, repo, path, ref)
+
+@mcp.tool(name="github_analyze_code_changes")
+def github_analyze_code_changes(owner: str, repo: str, pr_number: int) -> dict:
+    """
+    Analyze code changes in a pull request.
+    
+    Args:
+        owner: Repository owner (username or organization)
+        repo: Repository name
+        pr_number: Pull request number
+        
+    Returns:
+        Dict with analysis of code changes
+    """
+    return github_tools.analyze_code_changes(owner, repo, pr_number)
 
 if __name__ == "__main__":
     try:
