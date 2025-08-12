@@ -4,6 +4,7 @@ import time
 import signal
 import asyncio
 import json
+from datetime import datetime
 
 # ✅ Add the parent directory of the script to sys.path before importing
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -16,6 +17,7 @@ from workflow_orchestrator import WorkflowOrchestrator, WorkflowStep, WorkflowTe
 from google_voice_caller import GoogleVoiceCaller
 from slack_teams_tools import slack_tools, teams_tools
 from github_tools import github_tools
+from secrets_detection import secrets_detector
 
 def signal_handler(sig, frame):
     print("Shutting down Server......")
@@ -661,6 +663,398 @@ def github_analyze_code_changes(owner: str, repo: str, pr_number: int) -> dict:
         Dict with analysis of code changes
     """
     return github_tools.analyze_code_changes(owner, repo, pr_number)
+
+# Secrets Detection Tools
+
+@mcp.tool(name="scan_repository")
+def scan_repository(repo_path: str, use_gitleaks: bool = True, 
+                   use_trufflehog: bool = True) -> dict:
+    """
+    Scan a Git repository for secrets using Gitleaks and/or TruffleHog.
+    
+    Args:
+        repo_path: Path to the repository to scan
+        use_gitleaks: Whether to use Gitleaks for scanning (default: True)
+        use_trufflehog: Whether to use TruffleHog for scanning (default: True)
+        
+    Returns:
+        Dict containing comprehensive scan results from both tools
+    """
+    return secrets_detector.scan_repository(repo_path, use_gitleaks, use_trufflehog)
+
+@mcp.tool(name="scan_file")
+def scan_file(file_path: str, use_trufflehog: bool = True) -> dict:
+    """
+    Scan a single file for secrets using TruffleHog.
+    
+    Args:
+        file_path: Path to the file to scan
+        use_trufflehog: Whether to use TruffleHog for scanning (default: True)
+        
+    Returns:
+        Dict containing scan results and any detected secrets
+    """
+    return secrets_detector.scan_file(file_path, use_trufflehog)
+
+@mcp.tool(name="scan_directory")
+def scan_directory(dir_path: str, recursive: bool = True, 
+                  use_trufflehog: bool = True) -> dict:
+    """
+    Scan a directory for secrets using TruffleHog.
+    
+    Args:
+        dir_path: Path to the directory to scan
+        recursive: Whether to scan subdirectories (default: True)
+        use_trufflehog: Whether to use TruffleHog for scanning (default: True)
+        
+    Returns:
+        Dict containing scan results and any detected secrets
+    """
+    return secrets_detector.scan_directory(dir_path, recursive, use_trufflehog)
+
+@mcp.tool(name="get_scan_history")
+def get_scan_history(limit: int = 10) -> dict:
+    """
+    Get recent scan history with configurable limit.
+    
+    Args:
+        limit: Maximum number of recent scans to return (default: 10)
+        
+    Returns:
+        Dict containing list of recent scan results
+    """
+    return {
+        "success": True,
+        "scans": secrets_detector.get_scan_history(limit),
+        "total_scans": len(secrets_detector.scan_history)
+    }
+
+@mcp.tool(name="configure_scan_rules")
+def configure_scan_rules(config_updates: str) -> dict:
+    """
+    Update scan configuration rules and settings.
+    
+    Args:
+        config_updates: JSON string containing configuration updates
+        
+    Returns:
+        Dict containing updated configuration or error message
+    """
+    try:
+        config_data = json.loads(config_updates)
+        return secrets_detector.configure_scan_rules(config_data)
+    except json.JSONDecodeError as e:
+        return {
+            "success": False,
+            "error": f"Invalid JSON configuration: {str(e)}"
+        }
+
+@mcp.tool(name="get_scan_config")
+def get_scan_config() -> dict:
+    """
+    Get current scan configuration settings.
+    
+    Returns:
+        Dict containing current scan configuration
+    """
+    return {
+        "success": True,
+        "config": secrets_detector.get_scan_config()
+    }
+
+@mcp.tool(name="clear_scan_history")
+def clear_scan_history() -> dict:
+    """
+    Clear all scan history.
+    
+    Returns:
+        Dict containing success message
+    """
+    return secrets_detector.clear_scan_history()
+
+@mcp.tool(name="send_secrets_report")
+def send_secrets_report(to_email: str, subject: str = None, 
+                       scan_id: int = None, include_findings: bool = True,
+                       format_type: str = "detailed") -> dict:
+    """
+    Send a secrets detection scan report via email.
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject (default: auto-generated)
+        scan_id: Specific scan ID to report (default: latest scan)
+        include_findings: Whether to include detailed findings in email
+        format_type: Report format - "summary", "detailed", or "csv"
+        
+    Returns:
+        Dict containing email sending result
+    """
+    try:
+        # Get scan data
+        if scan_id is not None:
+            # Get specific scan by ID
+            scan_history = secrets_detector.get_scan_history(100)  # Get more scans to find the ID
+            target_scan = None
+            for scan in scan_history:
+                if id(scan) == scan_id:
+                    target_scan = scan
+                    break
+            if not target_scan:
+                return {
+                    "success": False,
+                    "error": f"Scan with ID {scan_id} not found"
+                }
+        else:
+            # Get latest scan
+            scan_history = secrets_detector.get_scan_history(1)
+            if not scan_history:
+                return {
+                    "success": False,
+                    "error": "No scan history available"
+                }
+            target_scan = scan_history[0]
+        
+        # Generate email content
+        if subject is None:
+            subject = f"🔐 Secrets Detection Report - {target_scan.get('target', 'Unknown')}"
+        
+        # Create email body
+        body = generate_secrets_report_email(target_scan, include_findings, format_type)
+        
+        # Send email using existing Gmail SMTP infrastructure
+        try:
+            from gmail_email_sender import GmailEmailSender
+            gmail_sender = GmailEmailSender()
+            email_result = gmail_sender.send_email(to_email, subject, body)
+        except ImportError:
+            # Fallback to sendmail if Gmail module not available
+            email_result = sendmail(to_email, subject, body)
+        
+        return {
+            "success": True,
+            "message": f"Secrets detection report sent successfully to {to_email}",
+            "scan_target": target_scan.get('target', 'Unknown'),
+            "total_findings": target_scan.get('total_findings', 0),
+            "email_result": email_result
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to send secrets report: {str(e)}"
+        }
+
+def generate_secrets_report_email(scan_data: dict, include_findings: bool, format_type: str) -> str:
+    """Generate email body for secrets detection report"""
+    
+    # Header
+    email_body = f"""
+🔐 SECRETS DETECTION REPORT
+{'=' * 50}
+
+📊 SCAN SUMMARY
+{'=' * 50}
+Target: {scan_data.get('target', 'Unknown')}
+Scan Type: {scan_data.get('scan_type', 'Unknown')}
+Start Time: {scan_data.get('start_time', 'Unknown')}
+End Time: {scan_data.get('end_time', 'Unknown')}
+Duration: {scan_data.get('duration', 0):.2f} seconds
+Tools Used: {', '.join(scan_data.get('tools_used', []))}
+
+📈 FINDINGS OVERVIEW
+{'=' * 50}
+Total Findings: {scan_data.get('total_findings', 0)}
+Severity Breakdown:
+"""
+    
+    # Add severity summary
+    severity_summary = scan_data.get('severity_summary', {})
+    for severity, count in severity_summary.items():
+        if count > 0:
+            email_body += f"  • {severity.upper()}: {count}\n"
+    
+    # Add tool summary
+    tool_summary = scan_data.get('summary', {})
+    email_body += "\n🛠️ TOOL RESULTS\n"
+    email_body += "=" * 50 + "\n"
+    
+    for tool, result in tool_summary.items():
+        if isinstance(result, dict):
+            status = result.get('status', 'Unknown')
+            count = result.get('findings_count', 0)
+            email_body += f"{tool.title()}: {status} ({count} findings)\n"
+    
+    # Add detailed findings if requested
+    if include_findings and scan_data.get('normalized_findings'):
+        email_body += "\n🔍 DETAILED FINDINGS\n"
+        email_body += "=" * 50 + "\n"
+        
+        findings = scan_data['normalized_findings']
+        for i, finding in enumerate(findings, 1):
+            email_body += f"\n{i}. {finding.get('rule_id', 'Unknown')} - {finding.get('severity', 'Unknown').upper()} Severity\n"
+            email_body += f"   File: {finding.get('file', 'Unknown')}\n"
+            if finding.get('line'):
+                email_body += f"   Line: {finding.get('line')}\n"
+            email_body += f"   Description: {finding.get('description', 'Unknown')}\n"
+            email_body += f"   Tool: {finding.get('tool', 'Unknown')}\n"
+            
+            # Add secret preview (truncated for security)
+            if finding.get('secret'):
+                secret = finding.get('secret', '')
+                if len(secret) > 30:
+                    secret = secret[:30] + "..."
+                email_body += f"   Secret: {secret}\n"
+            email_body += "   " + "-" * 40 + "\n"
+    
+    # Add footer
+    email_body += f"""
+{'=' * 50}
+📧 Report generated by MCP Secrets Detection Tool
+⏰ Generated at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+🔒 This report contains sensitive information - handle with care
+"""
+    
+    return email_body
+
+@mcp.tool(name="send_secrets_report_bulk")
+def send_secrets_report_bulk(recipients_csv: str = "recipients.csv", subject: str = None, 
+                            scan_limit: int = 5, include_findings: bool = True) -> dict:
+    """
+    Send secrets detection reports to multiple recipients using your bulk email system.
+    
+    Args:
+        recipients_csv: Path to CSV file with recipients (default: recipients.csv)
+        subject: Email subject (default: auto-generated)
+        scan_limit: Number of recent scans to include (default: 5)
+        include_findings: Whether to include detailed findings (default: True)
+        
+    Returns:
+        Dict containing bulk email sending result
+    """
+    try:
+        # Get recent scan history
+        recent_scans = secrets_detector.get_scan_history(scan_limit)
+        
+        if not recent_scans:
+            return {
+                "success": False,
+                "error": "No scan history available to report"
+            }
+        
+        # Generate email subject if not provided
+        if not subject:
+            total_findings = sum(scan.get("total_findings", 0) for scan in recent_scans)
+            subject = f"🔐 Security Alert: {total_findings} secrets detected across {len(recent_scans)} scans"
+        
+        # Generate email body
+        email_body = generate_secrets_report_email(recent_scans[0], include_findings, "detailed")
+        
+        # Use your existing bulk email system
+        try:
+            from bulk_email_sender import BulkEmailSender
+            bulk_sender = BulkEmailSender()
+            
+            # Send to all recipients in CSV
+            results = bulk_sender.send_bulk_email(subject, email_body, recipients_csv)
+            
+            return {
+                "success": True,
+                "message": f"Secrets detection reports sent to {len(results.get('successful', []))} recipients",
+                "recipients_file": recipients_csv,
+                "email_subject": subject,
+                "scans_included": len(recent_scans),
+                "total_findings": sum(scan.get("total_findings", 0) for scan in recent_scans),
+                "bulk_results": results
+            }
+            
+        except ImportError:
+            return {
+                "success": False,
+                "error": "Bulk email module not available. Please check bulk_email_sender.py"
+            }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to send bulk secrets reports: {str(e)}"
+        }
+
+@mcp.tool(name="send_secrets_report_to_config_email")
+def send_secrets_report_to_config_email(subject: str = None, scan_limit: int = 5, 
+                                      include_findings: bool = True) -> dict:
+    """
+    Send secrets detection report to the email address configured in gmail_config.json.
+    
+    Args:
+        subject: Email subject (default: auto-generated)
+        scan_limit: Number of recent scans to include (default: 5)
+        include_findings: Whether to include detailed findings (default: True)
+        
+    Returns:
+        Dict containing email sending result
+    """
+    try:
+        # Load Gmail configuration to get the configured email
+        try:
+            with open("gmail_config.json", "r") as f:
+                config = json.load(f)
+                config_email = config.get("email")
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {
+                "success": False,
+                "error": "Could not load gmail_config.json or find email configuration"
+            }
+        
+        if not config_email:
+            return {
+                "success": False,
+                "error": "No email address found in gmail_config.json"
+            }
+        
+        # Get recent scan history
+        recent_scans = secrets_detector.get_scan_history(scan_limit)
+        
+        if not recent_scans:
+            return {
+                "success": False,
+                "error": "No scan history available to report"
+            }
+        
+        # Generate email subject if not provided
+        if not subject:
+            total_findings = sum(scan.get("total_findings", 0) for scan in recent_scans)
+            subject = f"🔐 Security Alert: {total_findings} secrets detected across {len(recent_scans)} scans"
+        
+        # Generate email body
+        email_body = generate_secrets_report_email(recent_scans[0], include_findings, "detailed")
+        
+        # Send using Gmail SMTP
+        try:
+            from gmail_email_sender import GmailEmailSender
+            gmail_sender = GmailEmailSender()
+            email_result = gmail_sender.send_email(config_email, subject, email_body)
+            
+            return {
+                "success": True,
+                "message": f"Secrets detection report sent to configured email: {config_email}",
+                "recipient": config_email,
+                "email_subject": subject,
+                "scans_included": len(recent_scans),
+                "total_findings": sum(scan.get("total_findings", 0) for scan in recent_scans),
+                "email_result": email_result
+            }
+            
+        except ImportError:
+            return {
+                "success": False,
+                "error": "Gmail email module not available. Please check gmail_email_sender.py"
+            }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to send secrets report: {str(e)}"
+        }
 
 if __name__ == "__main__":
     try:
